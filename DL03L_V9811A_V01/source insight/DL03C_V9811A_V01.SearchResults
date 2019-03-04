@@ -1,0 +1,25 @@
+---- UART_CH1_RS 匹配 (28 in 5 文件) ----
+Api_User_Comm.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s4_apiuser):    if(ch==UART_CH1_RS)
+Api_User_Comm.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s4_apiuser):                     if(ch==UART_CH1_RS)  // RS485 2400BPS//
+Drv_UART.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s1_harddrv\v9811a_mcu):        if(ch==UART_CH1_RS)
+Drv_UART.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s1_harddrv\v9811a_mcu):    if(ch==UART_CH1_RS)
+Drv_UART.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s1_harddrv\v9811a_mcu):    if(ch==UART_CH1_RS)
+Drv_UART_H.h (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s1_harddrv\v9811a_mcu):#define UART_CH1_RS 1   // UART4 //
+Proc_System_Initialize.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):    api_handl_COMM_FRAME_ERROR(UART_CH1_RS);  
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):    gs_uart_iec_app_var[UART_CH1_RS].delay_10ms++;
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):    if(gs_uart_iec_app_var[UART_CH1_RS].tx_delay_flg ==TRUE )
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):        if(gs_uart_iec_app_var[UART_CH1_RS].tx_ready_10ms>0)  gs_uart_iec_app_var[UART_CH1_RS].tx_ready_10ms --;
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):        if (gs_uart_drv_var[UART_CH1_RS].tx_len>0)
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            buf=(gs_uart_drv_var[UART_CH1_RS].buff[gs_uart_drv_var[UART_CH1_RS].buff_index]);
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            if(gs_uart_drv_var[UART_CH1_RS].bits_len==7)
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            gs_uart_iec_app_var[UART_CH1_RS].delay_10ms = 0;   // 有数据处理时清除延时计数器 //
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            gs_uart_drv_var[UART_CH1_RS].buff[gs_uart_drv_var[UART_CH1_RS].buff_index] =0;
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            gs_uart_drv_var[UART_CH1_RS].buff_index++;
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            gs_uart_drv_var[UART_CH1_RS].tx_len -- ;
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            gs_uart_drv_var[UART_CH1_RS].buff_index = 0;
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):            gs_uart_drv_var[UART_CH1_RS].status = UART_STATUS_BUSY_TX_OVER;          
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):	 gs_uart_iec_app_var[UART_CH1_RS].delay_10ms = 0;   // 有数据处理时清除延时计数器 //
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):        gs_uart_drv_var[UART_CH1_RS].buff[gs_uart_drv_var[UART_CH1_RS].buff_index] = buf&0x7f;//  7位数据位//
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):        gs_uart_drv_var[UART_CH1_RS].buff_index++;
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):        if(gs_uart_drv_var[UART_CH1_RS].buff_index>4)
+Proc_System_Interrupt.c (d:\xl_mucpro\wg\dl03c_v9811a_v01\c_source\s0_system):        gs_uart_drv_var[UART_CH1_RS].buff_index %= UART_BUFF_SIZE;

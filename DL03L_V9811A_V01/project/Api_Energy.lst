@@ -1,0 +1,263 @@
+C51 COMPILER V9.01   API_ENERGY                                                            01/31/2019 11:34:25 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE API_ENERGY
+OBJECT MODULE PLACED IN .\Api_Energy.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S3_ApiPlat\Api_Energy.c LARGE WARNINGLEVEL(1) BROWSE INCDIR(..\
+                    -C_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\C_Source
+                    -\S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..\C_Sourc
+                    -e\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Api_Energy.lst) OBJECT(.\Api_Energy.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name                  : Api_Energy.C
+   6          **Author                : maji
+   7          **date                  : 2016-04-20 
+   8          **description   : 电能计量应用层相关函数C文件
+   9          **note                  : MERTER FOR DL06A
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2016-04-20   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          
+  19          #include <MyIncludes_H.h>
+  20          
+  21          
+  22          
+  23          
+  24          ENERGY_USER_DATA    gs_energy_user_data;            //当前电量RAM主数据  //
+  25          ENERGY_USER_DATA    gs_energy_user_data_back;   //当前电量RAM备份数据 //
+  26          ENERGY_VAR                    gs_energy_var;                 // 电能增量脉冲变量数据，上电初始化为0  //
+  27          
+  28          
+  29          /*****************************************************************************
+  30          ** Function name    :api_init_current_energy_data_ram
+  31          **
+  32          ** Description         :初始化当前电量RAM区数据，程序复位初始化调用        
+  33          **
+  34          ** Parameters         :NONE          
+  35          **
+  36          ** Returned value   :NONE
+  37          **
+  38          **----------------------------------------------------------------------------
+  39          ** V01.01  MJ  2016-04-23
+  40          ******************************************************************************/
+  41          void api_init_current_energy_data_ram(void)
+  42          {
+  43   1       uint8 i;
+  44   1      
+  45   1          api_check_current_energy_data(); 
+  46   1          for(i=0;i<EC_CH_NUM;i++)
+  47   1          {
+  48   2              gs_energy_var.pluse[i] = 0;
+  49   2          }
+  50   1      }
+  51          
+  52          /*****************************************************************************
+C51 COMPILER V9.01   API_ENERGY                                                            01/31/2019 11:34:25 PAGE 2   
+
+  53          ** Function name    :api_check_current_energy_data
+  54          **
+  55          ** Description         :当前电能数据的检查处理，电能累计函数调用
+  56          **
+  57          ** Parameters         :NONE          
+  58          **
+  59          ** Returned value   :NONE
+  60          **
+  61          **----------------------------------------------------------------------------
+  62          ** V01.01  MJ  2016-04-23
+  63          ******************************************************************************/
+  64          void api_check_current_energy_data(void)
+  65          {   
+  66   1          INT16U csck_tmp;
+  67   1       
+  68   1          //电能数据获取  //   
+  69   1          csck_tmp = Lib_get_csck_int16u_num(&gs_energy_user_data.us_val[0][0].buf[0],LEN_EC_CURRENT,CHECKWORD);
+  70   1          if(csck_tmp != gs_energy_user_data.u16_csck) 
+  71   1          {
+  72   2              csck_tmp = Lib_get_csck_int16u_num(&gs_energy_user_data_back.us_val[0][0].buf[0],LEN_EC_CURRENT,CH
+             -ECKWORD);        
+  73   2              if(csck_tmp != gs_energy_user_data_back.u16_csck) 
+  74   2              {
+  75   3                  mem_read(&gs_energy_user_data_back.us_val[0][0].buf[0], ADR_BLOCK00_EC_L0_E2P, LEN_EC_CURRENT,
+             - MEM_E2P1);
+  76   3                  gs_energy_user_data_back.u16_csck = Lib_get_csck_int16u_num(&gs_energy_user_data_back.us_val[0
+             -][0].buf[0],LEN_EC_CURRENT,CHECKWORD);
+  77   3              }
+  78   2              Lib_Copy_Str_TwoArry(&gs_energy_user_data.us_val[0][0].buf[0],&gs_energy_user_data_back.us_val[0][
+             -0].buf[0],LEN_EC_CURRENT);
+  79   2              gs_energy_user_data.u16_csck = gs_energy_user_data_back.u16_csck;       
+  80   2          }
+  81   1      }
+  82          
+  83          /*****************************************************************************
+  84          ** Function name    :lnk_inc_energy_pluse
+  85          **
+  86          ** Description         :当前电能脉冲增量处理，安装定义的通道进行累计    
+  87          **
+  88          ** Parameters         :NONE          
+  89          **
+  90          ** Returned value   :NONE
+  91          **
+  92          **----------------------------------------------------------------------------
+  93          ** V01.01  MJ  2016-04-23
+  94          ******************************************************************************/
+  95          uint8 lnk_add_energy_pluse(void)
+  96          {
+  97   1      uint8 i;
+  98   1      uint8 chg_fg=FALSE;
+  99   1      uint8 u8_tmp;
+ 100   1      
+ 101   1              for(i=0;i<EC_CH_NUM;i++)
+ 102   1              {
+ 103   2                      switch (i)
+ 104   2                      {
+ 105   3                              default:
+ 106   3                                      if(gs_energy_var.pluse[i]>0)
+ 107   3                                      {
+ 108   4                                              DisableINT();                                   // disable interrupt function  //
+ 109   4                                              u8_tmp = gs_energy_var.pluse[i];
+ 110   4                                              gs_energy_var.pluse[i] =0;  //清零处理 //
+C51 COMPILER V9.01   API_ENERGY                                                            01/31/2019 11:34:25 PAGE 3   
+
+ 111   4                                              EnableINT();
+ 112   4      
+ 113   4                                              chg_fg = TRUE;
+ 114   4                                       //u16_tmp = MAKEWORD(gs_energy_user_data.us_val[i][0].buf[4],gs_energy_us
+             -er_data.us_val[i][0].buf[5]);
+ 115   4                                              gs_energy_user_data.us_val[i][0].val.decim_hex16 += u8_tmp;
+ 116   4                                              #if (TARIFF_MAX_NUM>1)
+ 117   4                                              gs_energy_user_data.us_val[i][EN_TRIFF_no].val.decim_hex16 += u8_tmp;
+ 118   4                                              #endif
+ 119   4                                      }
+ 120   3                              break;
+ 121   3                      
+ 122   3                      }
+ 123   2              }
+ 124   1      
+ 125   1              return (chg_fg);
+ 126   1      }
+ 127          
+ 128          
+ 129          /*****************************************************************************
+ 130          ** Function name    :api_accum_current_energy_data_pre_second
+ 131          **
+ 132          ** Description         :当前电能数据累计处理，每秒调用
+ 133          **
+ 134          ** Parameters         :NONE          
+ 135          **
+ 136          ** Returned value   :NONE
+ 137          **
+ 138          **----------------------------------------------------------------------------
+ 139          ** V01.01  MJ  2016-04-23
+ 140          ******************************************************************************/
+ 141          void api_accum_current_energy_data_pre_second(void)
+ 142          {
+ 143   1      uint8 save_fg=FALSE;
+ 144   1      uint8 i;
+ 145   1      
+ 146   1              if(CheckPOWERUP() !=TRUE)   return;  
+ 147   1              // 电能数据合法性检查 //
+ 148   1              api_check_current_energy_data();
+ 149   1      
+ 150   1              //电能脉冲增量处理 //
+ 151   1              if(lnk_add_energy_pluse()==FALSE)  return;  
+ 152   1              
+ 153   1              for(i=0;i<EC_CH_NUM;i++)
+ 154   1              {
+ 155   2                      if(gs_energy_user_data.us_val[i][0].val.decim_hex16>=METER_CONST_1KWH)
+ 156   2                      {
+ 157   3                              if(i==0)   save_fg = TRUE;   //电能通道1的电量发生整数进位时配置存储标识 //
+ 158   3                              gs_energy_user_data.us_val[i][0].val.decim_hex16 -= METER_CONST_1KWH;
+ 159   3                              gs_energy_user_data.us_val[i][0].val.integ_hex32++;
+ 160   3                              if(gs_energy_user_data.us_val[i][0].val.integ_hex32 > MAX_ENERGY_INtEGER)
+ 161   3                              {
+ 162   4                                      gs_energy_user_data.us_val[i][0].val.integ_hex32 = 0;  // 超出最大范围后清理 //
+ 163   4                              }
+ 164   3                      }
+ 165   2                      #if (TARIFF_MAX_NUM>0)
+ 166   2                      if(gs_energy_user_data.us_val[i][EN_TRIFF_no].val.decim_hex16>=METER_CONST_1KWH)
+ 167   2                      {
+ 168   3                              gs_energy_user_data.us_val[i][EN_TRIFF_no].val.decim_hex16 -= METER_CONST_1KWH;
+ 169   3                              gs_energy_user_data.us_val[i][EN_TRIFF_no].val.integ_hex32++;
+ 170   3                              if(gs_energy_user_data.us_val[i][EN_TRIFF_no].val.integ_hex32 > MAX_ENERGY_INtEGER)
+ 171   3                              {
+C51 COMPILER V9.01   API_ENERGY                                                            01/31/2019 11:34:25 PAGE 4   
+
+ 172   4                                      gs_energy_user_data.us_val[i][EN_TRIFF_no].val.integ_hex32 = 0;  // 超出最大范围后清理 //
+ 173   4                              }
+ 174   3                      }               
+ 175   2                      #endif
+ 176   2                      
+ 177   2              }
+ 178   1      
+ 179   1              // 更新RAM区电能校验和和备份区数据//
+ 180   1              gs_energy_user_data.u16_csck = Lib_get_csck_int16u_num(&gs_energy_user_data.us_val[0][0].buf[0],LEN_EC_CU
+             -RRENT,CHECKWORD);  
+ 181   1              Lib_Copy_Str_TwoArry(&gs_energy_user_data_back.us_val[0][0].buf[0],&gs_energy_user_data.us_val[0][0].buf[
+             -0],LEN_EC_E2P);
+ 182   1      
+ 183   1              // 电能数据保存 //
+ 184   1              if(save_fg==TRUE)
+ 185   1              {
+ 186   2                      mem_db_write(ADR_BLOCK00_EC_L0_E2P,&gs_energy_user_data.us_val[0][0].buf[0],LEN_EC_CURRENT,MEM_E2P1);
+ 187   2              }        
+ 188   1      }
+ 189          
+ 190          
+ 191          
+ 192          /*****************************************************************************
+ 193          ** Function name    :api_clr_current_energy_data
+ 194          **
+ 195          ** Description         :当前电能数据的清零处理
+ 196          **
+ 197          ** Parameters         :NONE          
+ 198          **
+ 199          ** Returned value   :NONE
+ 200          **
+ 201          **----------------------------------------------------------------------------
+ 202          ** V01.01  MJ  2016-04-23
+ 203          ******************************************************************************/
+ 204          void api_clr_current_energy_data(void)
+ 205          {
+ 206   1          // 清除当前电量数据的RAM主区数据 //
+ 207   1          Lib_Set_String(&gs_energy_user_data.us_val[0][0].buf[0],0,LEN_EC_CURRENT);
+ 208   1          gs_energy_user_data.u16_csck = Lib_get_csck_int16u_num(&gs_energy_user_data.us_val[0][0].buf[0],LEN_EC
+             -_CURRENT,CHECKWORD);  
+ 209   1          // 清除当前电量数据的RAM备份区数据 //
+ 210   1          Lib_Copy_Str_TwoArry(&gs_energy_user_data_back.us_val[0][0].buf[0],&gs_energy_user_data.us_val[0][0].b
+             -uf[0],LEN_EC_E2P);
+ 211   1          // 清除当前电量数据的E2P区数据 //
+ 212   1          mem_db_write(ADR_BLOCK00_EC_L0_E2P,&gs_energy_user_data.us_val[0][0].buf[0],LEN_EC_E2P-2,MEM_E2P1);
+ 213   1      }
+ 214          
+ 215          
+ 216                  
+ 217          /***************************************************************
+ 218          *    END
+ 219          ****************************************************************/
+ 220          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1045    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     65       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.01   API_ENERGY                                                            01/31/2019 11:34:25 PAGE 5   
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

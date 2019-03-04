@@ -1,0 +1,593 @@
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE DRV_UART
+OBJECT MODULE PLACED IN .\Drv_UART.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S1_HardDrv\V9811A_MCU\Drv_UART.c LARGE WARNINGLEVEL(1) BROWSE I
+                    -NCDIR(..\C_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..
+                    -\C_Source\S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;.
+                    -.\C_Source\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Drv_UART.lst) OBJECT(.\Drv_UART.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name                  : Drv_UART.c
+   6          **Author                : maji
+   7          **date                  : 2016-04-20 
+   8          **description   : UART模块的硬件驱动C代码
+   9          **note                  : V9811A ，MERTER FOR DL03C
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2016-04-26   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          #include <MyIncludes_H.h>
+  19          
+  20          
+  21          
+  22          UART_DRV_VAR gs_uart_drv_var[UART_CH_NUM];
+  23          
+  24          
+  25          /*******************************************************************************************
+  26          ** 函数名称: Set_Uart2_badu
+  27          ** 功能描述: UART2波特率配置
+  28          ** 入口参数: u16 badu：串口波特率，双字节16进制数据
+  29          ** 出口参数: 无
+  30          ** 说明    : 
+  31          *******************************************************************************************/
+  32          void Set_Uart2_badu(uint16 rate)
+  33          {
+  34   1          TMOD2 = 0x20;                               // 8-bit counter with auto-reload
+  35   1          switch(rate)
+  36   1          {
+  37   2              case BPS600:
+  38   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON2 = 0x82;
+                      TL21=TH21=0xE4;
+              #endif
+  42   2      #if(FSYSCLK==FSYSCLK_6M5)
+  43   2              TCON2 = 0x82;                           //波特率加倍 //波特率发生器时钟源clk/12 作为时钟源/
+  44   2              TL21=TH21=0xC7 ;
+  45   2      #endif
+  46   2              break;
+  47   2      
+  48   2              case BPS1200:
+  49   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON2 = 0x82;
+                      TL21=TH21=0xF2;
+              #endif
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 2   
+
+  53   2      #if(FSYSCLK==FSYSCLK_6M5)
+  54   2              TCON2 = 0x82;
+  55   2              TL21=TH21=0xE4;
+  56   2      #endif
+  57   2              break;
+  58   2      
+  59   2              case BPS2400:
+  60   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON2 = 0x22;           //波特率加倍 //波特率发生器时钟源clk 作为时钟源//波特率发生器的启动
+                      TL21=TH21=0xD5;
+              #endif
+  64   2      #if(FSYSCLK==FSYSCLK_6M5)
+  65   2              TCON2 = 0xa2;           //波特率加倍 //波特率发生器时钟源clk 作为时钟源//波特率发生器的启动
+  66   2              TL21=TH21=0x56;  //mcu主频 加倍后
+  67   2      #endif
+  68   2              break;
+  69   2      
+  70   2              case BPS4800:
+  71   2      
+  72   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON2 = 0xa2;
+                      TL21=TH21=0xd5;
+              #endif
+  76   2      #if(FSYSCLK==FSYSCLK_6M5)
+  77   2              TCON2 = 0xa2;
+  78   2              TL21=TH21=0xAB;  //mcu主频 加倍后
+  79   2      #endif                  
+  80   2              break;
+  81   2      
+  82   2              case BPS9600:
+  83   2      
+  84   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON2 = 0xa2;
+                      TL21=TH21=0xeb;
+              #endif  
+  88   2      #if(FSYSCLK==FSYSCLK_6M5)
+  89   2              TCON2 = 0xa2;
+  90   2              TL21=TH21=0xD5;  //mcu主频 加倍后
+  91   2      #endif                  
+  92   2              break;
+  93   2      
+  94   2      
+  95   2              case BPS300:
+  96   2              default:        // 300
+  97   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON2 = 0x82;                           //波特率加倍 //波特率发生器时钟源clk/12 作为时钟源/
+                      TL21=TH21= 0xC7;
+              #endif
+ 101   2      #if(FSYSCLK==FSYSCLK_6M5)
+ 102   2              TCON2 = 0x82;                           //波特率加倍 //波特率发生器时钟源clk/12 作为时钟源/
+ 103   2              TL21=TH21= 0x8E;
+ 104   2      #endif
+ 105   2              break;
+ 106   2          }
+ 107   1      
+ 108   1      }
+ 109          
+ 110          
+ 111          /*******************************************************************************************
+ 112          ** 函数名称: Set_Uart4_badu
+ 113          ** 功能描述: UART4波特率配置
+ 114          ** 入口参数: u16 badu：串口波特率，双字节16进制数据
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 3   
+
+ 115          ** 出口参数: 无
+ 116          ** 说明    : 
+ 117          *******************************************************************************************/
+ 118          void Set_Uart4_badu(uint16 rate)
+ 119          {
+ 120   1          TMOD4 = 0x20;                               // 8-bit counter with auto-reload
+ 121   1          switch(rate)
+ 122   1          {
+ 123   2              case BPS600:
+ 124   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON4 = 0x82;
+                      TL41=TH41=0xE4;
+              #endif
+ 128   2      #if(FSYSCLK==FSYSCLK_6M5)
+ 129   2              TCON4 = 0x82;                           //波特率加倍 //波特率发生器时钟源clk/12 作为时钟源/
+ 130   2              TL41=TH41=0xC7 ;
+ 131   2      #endif
+ 132   2              break;
+ 133   2      
+ 134   2              case BPS1200:
+ 135   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON4 = 0x82;
+                      TL41=TH41=0xF2;
+              #endif
+ 139   2      #if(FSYSCLK==FSYSCLK_6M5)
+ 140   2              TCON2 = 0x82;
+ 141   2              TL41=TH41=0xE4;
+ 142   2      #endif
+ 143   2              break;
+ 144   2      
+ 145   2              case BPS2400:
+ 146   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON4 = 0x22;           //波特率加倍 //波特率发生器时钟源clk 作为时钟源//波特率发生器的启动
+                      TL41=TH41=0xD5;
+              #endif
+ 150   2      #if(FSYSCLK==FSYSCLK_6M5)
+ 151   2              TCON4 = 0xa2;           //波特率加倍 //波特率发生器时钟源clk 作为时钟源//波特率发生器的启动
+ 152   2              TL41=TH41=0x56;  //mcu主频 加倍后
+ 153   2      #endif
+ 154   2              break;
+ 155   2      
+ 156   2              case BPS4800:
+ 157   2      
+ 158   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON4 = 0xa2;
+                      TL41=TH41=0xd5;
+              #endif
+ 162   2      #if(FSYSCLK==FSYSCLK_6M5)
+ 163   2              TCON4 = 0xa2;
+ 164   2              TL41=TH41=0xAB;  //mcu主频 加倍后
+ 165   2      #endif                  
+ 166   2              break;
+ 167   2      
+ 168   2              case BPS9600:
+ 169   2      #if(FSYSCLK==FSYSCLK_3M2)
+                     TCON4 = 0xa2;
+                      TL41=TH41=0xeb;
+              #endif  
+ 173   2      #if(FSYSCLK==FSYSCLK_6M5)
+ 174   2              TCON4 = 0xa2;
+ 175   2              TL41=TH41=0xD5;  //mcu主频 加倍后
+ 176   2      #endif                  
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 4   
+
+ 177   2              break;
+ 178   2      
+ 179   2      
+ 180   2              case BPS300:
+ 181   2              default:        // 300
+ 182   2      #if(FSYSCLK==FSYSCLK_3M2)
+                      TCON4 = 0x82;                           //波特率加倍 //波特率发生器时钟源clk/12 作为时钟源/
+                      TL41=TH41= 0xC7;
+              #endif
+ 186   2      #if(FSYSCLK==FSYSCLK_6M5)
+ 187   2              TCON4 = 0x82;                           //波特率加倍 //波特率发生器时钟源clk/12 作为时钟源/
+ 188   2              TL41=TH41= 0x8E;
+ 189   2      #endif
+ 190   2              break;
+ 191   2      
+ 192   2          }
+ 193   1      
+ 194   1      }
+ 195          
+ 196          
+ 197          
+ 198          /*******************************************************************************************
+ 199          ** 函数名称: Dis_UART0_rx
+ 200          ** 功能描述: UART0串口接收禁止
+ 201          ** 入口参数: NO
+ 202          ** 出口参数: NO
+ 203          ** 说明    : 
+ 204          *******************************************************************************************/
+ 205          void En_UART2_rx(void)
+ 206          {
+ 207   1          UART2_INITLIZE_ON(); 
+ 208   1      //    UART2_PWM38K_DIS();
+ 209   1          SCON2 = 0x50;        //8 位 UART，波特率由波特率发生器决定。  接收使能//
+ 210   1      
+ 211   1          ExInt2IFG &= ~(BIT0+BIT1);                  
+ 212   1          ExInt2IE&=~BIT0;            //取消发送中断 //
+ 213   1          ExInt2IE|=BIT1;             //接收中断 en
+ 214   1          EIE|=BIT0;
+ 215   1      }
+ 216          
+ 217          /*******************************************************************************************
+ 218          ** 函数名称: Dis_UART0_rx
+ 219          ** 功能描述: UART0串口接收禁止
+ 220          ** 入口参数: NO
+ 221          ** 出口参数: NO
+ 222          ** 说明    : 
+ 223          *******************************************************************************************/
+ 224          void En_UART4_rx(void)
+ 225          {
+ 226   1          UART4_INITLIZE_ON();      
+ 227   1          SCON4 = 0x50;        //8 位 UART，波特率由波特率发生器决定。  接收使能//
+ 228   1          ExInt2IFG &= ~(BIT2+BIT3);                  
+ 229   1          ExInt2IE&=~BIT2;            //发送中断dis
+ 230   1          ExInt2IE|=BIT3;             //接收中断 en
+ 231   1          EIE|=BIT0;
+ 232   1      }
+ 233          
+ 234          
+ 235          /*******************************************************************************************
+ 236          ** 函数名称: Dis_UART0_rx
+ 237          ** 功能描述: UART0串口接收禁止
+ 238          ** 入口参数: NO
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 5   
+
+ 239          ** 出口参数: NO
+ 240          ** 说明    : 
+ 241          *******************************************************************************************/
+ 242          void Dis_UART2_rx(void)
+ 243          {
+ 244   1          ExInt2IE &= ~BIT1;   //关闭串口接收中断//
+ 245   1      }
+ 246          
+ 247          /*******************************************************************************************
+ 248          ** 函数名称: Dis_UART0_rx
+ 249          ** 功能描述: UART0串口接收禁止
+ 250          ** 入口参数: NO
+ 251          ** 出口参数: NO
+ 252          ** 说明    : 
+ 253          *******************************************************************************************/
+ 254          void Dis_UART4_rx(void)
+ 255          {
+ 256   1          ExInt2IE&=~BIT3;            //发送中断dis 
+ 257   1      }
+ 258          
+ 259          /*******************************************************************************************
+ 260          ** 函数名称: Dis_UART0_rx
+ 261          ** 功能描述: UART0串口接收禁止
+ 262          ** 入口参数: NO
+ 263          ** 出口参数: NO
+ 264          ** 说明    : 
+ 265          *******************************************************************************************/
+ 266          void En_UART2_Tx(void)
+ 267          {
+ 268   1          ExInt2IFG &= ~(BIT0+BIT1);                  
+ 269   1          ExInt2IE |=BIT0;            //开放发送中断 //
+ 270   1          ExInt2IE &= ~BIT1;   //关闭串口接收中断//
+ 271   1          EIE|=BIT0;          //开放中断向量8  //
+ 272   1       //   UART2_PWM38K_EN();
+ 273   1      }
+ 274          
+ 275          
+ 276          /*******************************************************************************************
+ 277          ** 函数名称: Dis_UART0_rx
+ 278          ** 功能描述: UART0串口接收禁止
+ 279          ** 入口参数: NO
+ 280          ** 出口参数: NO
+ 281          ** 说明    : 
+ 282          *******************************************************************************************/
+ 283          void En_UART4_Tx(void)
+ 284          {
+ 285   1          ExInt2IFG &= ~(BIT2+BIT3);                  
+ 286   1          ExInt2IE |=BIT2;            //开放发送中断 //
+ 287   1          ExInt2IE &= ~BIT3;   //关闭串口接收中断//
+ 288   1          EIE|=BIT0;          //开放中断向量8  //
+ 289   1      }
+ 290          
+ 291          
+ 292          
+ 293          /*******************************************************************************************
+ 294          ** 函数名称: Init_UART0_hard
+ 295          ** 功能描述: UART0串口硬件初始化
+ 296          ** 入口参数: u16 badu：串口波特率，双字节16进制数据
+ 297          **           u16 bits_len: 通讯字节位数格式，8或7
+ 298          ** 出口参数: 无
+ 299          ** 说明    : 
+ 300          *******************************************************************************************/
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 6   
+
+ 301          void Init_UART2_hard(uint16 badu)
+ 302          {
+ 303   1           
+ 304   1          Set_Uart2_badu(badu);
+ 305   1          En_UART2_rx();
+ 306   1      
+ 307   1      }
+ 308          
+ 309          /*******************************************************************************************
+ 310          ** 函数名称: Init_UART0_hard
+ 311          ** 功能描述: UART0串口硬件初始化
+ 312          ** 入口参数: u16 badu：串口波特率，双字节16进制数据
+ 313          **           u16 bits_len: 通讯字节位数格式，8或7
+ 314          ** 出口参数: 无
+ 315          ** 说明    : 
+ 316          *******************************************************************************************/
+ 317          void Init_UART4_hard(uint16 badu)
+ 318          {
+ 319   1           
+ 320   1          Set_Uart4_badu(badu);
+ 321   1          En_UART4_rx();
+ 322   1      
+ 323   1      }
+ 324          
+ 325          
+ 326          /*******************************************************************************************
+ 327          ** 函数名称: Init_UART_soft
+ 328          ** 功能描述: UART[X]通道软件初始化
+ 329          ** 入口参数: uint8 ch: 通道序号X
+ 330          ** 出口参数: 无
+ 331          ** 说明    : 
+ 332          *******************************************************************************************/
+ 333          void Init_UART_soft(uint8 ch)
+ 334          {
+ 335   1      uint8 i;
+ 336   1          //init mem
+ 337   1          if(ch > UART_CH_INDEX_MAX )  return ;
+ 338   1      
+ 339   1          gs_uart_drv_var[ch].tx_len = 0;                             //COMM_485_TX_LEN = 0 ;
+ 340   1          gs_uart_drv_var[ch].buff_index = 0;                 //COMM_485_BUFF_INDEX = 0 ;
+ 341   1          gs_uart_drv_var[ch].buff_index_back = 0;    //COMM_485_BUFF_INDEX_BAK = 0 ;
+ 342   1          gs_uart_drv_var[ch].rx_over_ticks = 0;              //COMM_485_RX_OVERTIME_TICKS = 0 ;
+ 343   1          gs_uart_drv_var[ch].status = UART_STATUS_IDLE;              //COMM_485_RX_OVERTIME_TICKS = 0 ;
+ 344   1          gs_uart_drv_var[ch].bits_len = 7;           //COMM_485_RX_OVERTIME_TICKS = 0 ;
+ 345   1          for (i=0; i<UART_BUFF_SIZE; i++)
+ 346   1          {
+ 347   2              gs_uart_drv_var[ch].buff[i]=0;    
+ 348   2          }
+ 349   1      }
+ 350          
+ 351          /*******************************************************************************************
+ 352          ** 函数名称: Hdl_UART_10ms_run
+ 353          ** 功能描述: UART[X]通道每10ms处理
+ 354          ** 入口参数: uint8 ch: 通道序号X
+ 355          ** 出口参数: 无
+ 356          ** 说明    : 
+ 357          *******************************************************************************************/
+ 358          void Hdl_UART_10ms_run(uint8 ch)
+ 359          {
+ 360   1          uint8 rx_len ;
+ 361   1      
+ 362   1              if(ch > UART_CH_INDEX_MAX )  return ;
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 7   
+
+ 363   1      
+ 364   1          // 串口发送状态时，溢出定时寄存器不累加      //
+ 365   1          if (gs_uart_drv_var[ch].tx_len != 0)
+ 366   1          {
+ 367   2              gs_uart_drv_var[ch].rx_over_ticks = 0 ;
+ 368   2              return ;
+ 369   2          }
+ 370   1      
+ 371   1          //发送和发送结束状态有效时不接收数据 //
+ 372   1          if (gs_uart_drv_var[ch].status ==UART_STATUS_BUSY_TX)
+ 373   1          {
+ 374   2              gs_uart_drv_var[ch].rx_over_ticks = 0 ;
+ 375   2              return ;
+ 376   2          }
+ 377   1          
+ 378   1          if (gs_uart_drv_var[ch].status ==UART_STATUS_BUSY_TX_OVER)
+ 379   1          {
+ 380   2              gs_uart_drv_var[ch].rx_over_ticks++;
+ 381   2               if(gs_uart_drv_var[ch].rx_over_ticks<2)   return;       // mj 2016-6-16 //
+ 382   2              if(ch==UART_CH0_IR)
+ 383   2              {
+ 384   3                  En_UART2_rx();
+ 385   3              }
+ 386   2              if(ch==UART_CH1_RS)
+ 387   2              {
+ 388   3                  En_UART4_rx();
+ 389   3              }
+ 390   2              Init_UART_soft(ch);
+ 391   2              return ;
+ 392   2          }
+ 393   1      
+ 394   1      
+ 395   1          // 未接收到数据时，溢出定时寄存器不累加     //
+ 396   1          rx_len = gs_uart_drv_var[ch].buff_index     ;
+ 397   1          if (rx_len == 0)
+ 398   1          {
+ 399   2              gs_uart_drv_var[ch].rx_over_ticks = 0 ;
+ 400   2              return ;
+ 401   2          }
+ 402   1      
+ 403   1          gs_uart_drv_var[ch].status = UART_STATUS_BUSY_RX;
+ 404   1          // 接收到数据时，如果接收数据溢出定时寄存器不累加     //
+ 405   1          if (rx_len ==gs_uart_drv_var[ch].buff_index_back)
+ 406   1          {
+ 407   2              gs_uart_drv_var[ch].rx_over_ticks++;
+ 408   2          }
+ 409   1          else
+ 410   1          {
+ 411   2              gs_uart_drv_var[ch].rx_over_ticks = 0 ;     
+ 412   2          }
+ 413   1          gs_uart_drv_var[ch].buff_index_back = rx_len;
+ 414   1      
+ 415   1      }
+ 416          
+ 417          
+ 418          /*******************************************************************************************
+ 419          ** 函数名称: Tx_UART_frist
+ 420          ** 功能描述: UART[X]通道发送首字节处理函数
+ 421          ** 入口参数: uint8 *p_buf: 发送数据通道的缓存区首地址
+ 422          **           uint8 len : 发送数据字节长度   
+ 423          **           uint16 badu: 串口发送波特率
+ 424          **           uint8 ch   : 串口通道号
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 8   
+
+ 425          ** 出口参数: 无
+ 426          ** 说明    : 
+ 427          *******************************************************************************************/
+ 428          void Tx_UART_frist (uint8 *p_buf, uint8 len,uint16 badu,uint8 ch)
+ 429          {    
+ 430   1          uint8 i ;
+ 431   1          uint8 bits_len;
+ 432   1      
+ 433   1      
+ 434   1          bits_len = 7;  //代表7位数据位 //
+ 435   1          //
+ 436   1          if (len > UART_BUFF_SIZE)
+ 437   1          {
+ 438   2          len = UART_BUFF_SIZE ;
+ 439   2          }
+ 440   1      
+ 441   1          if(ch > UART_CH_INDEX_MAX )  return ;
+ 442   1      
+ 443   1        // gs_uart_drv_var[ch].buff[0] =0X7F;
+ 444   1        // gs_uart_drv_var[ch].buff[1] =0X7F;
+ 445   1        // gs_uart_drv_var[ch].buff[2] =0X7F;
+ 446   1          for (i=0; i<len; i++)
+ 447   1          {
+ 448   2              gs_uart_drv_var[ch].buff[i] = p_buf[i] ;
+ 449   2          }
+ 450   1          gs_uart_drv_var[ch].tx_len = len-1;
+ 451   1          gs_uart_drv_var[ch].buff_index = 1;
+ 452   1          gs_uart_drv_var[ch].buff_index_back = 0;
+ 453   1          gs_uart_drv_var[ch].status = UART_STATUS_BUSY_TX;
+ 454   1      
+ 455   1          DisableINT(); 
+ 456   1          if(gs_uart_drv_var[ch].bits_len==7)
+ 457   1          {
+ 458   2          // 7位数据处理方式 //
+ 459   2              ACC=(gs_uart_drv_var[ch].buff[0] &0x7F);
+ 460   2              if(P)
+ 461   2              {
+ 462   3                  gs_uart_drv_var[ch].buff[0] |= BIT7;
+ 463   3              }
+ 464   2              else
+ 465   2              {
+ 466   3                  gs_uart_drv_var[ch].buff[0] &= ~BIT7;
+ 467   3              }
+ 468   2          }
+ 469   1          EnableINT();
+ 470   1          if(ch==UART_CH0_IR)
+ 471   1          {
+ 472   2              Init_UART2_hard(badu);    //硬件初始化  //    
+ 473   2              Dis_UART2_rx();
+ 474   2              En_UART2_Tx();
+ 475   2              SBUF2=gs_uart_drv_var[ch].buff[0];   
+ 476   2          }
+ 477   1      
+ 478   1          if(ch==UART_CH1_RS)
+ 479   1          {
+ 480   2              Init_UART4_hard(badu);    //硬件初始化  //    
+ 481   2              Dis_UART4_rx();
+ 482   2              En_UART4_Tx();
+ 483   2              SBUF4=gs_uart_drv_var[ch].buff[0];   
+ 484   2          }
+ 485   1      
+ 486   1             
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 9   
+
+ 487   1      
+ 488   1      }
+ 489          
+ 490          
+ 491          /*******************************************************************************************
+ 492          ** 函数名称: Get_UART_rx_buff
+ 493          ** 功能描述: 获取UART[X]通道接收的数据首地址和长度
+ 494          ** 入口参数: uint8 **p_buf: 用来返回接收数据的首地址数据
+ 495          **           uint8 ch   : 串口通道号
+ 496          ** 出口参数: uint8 len : 接收数据长度
+ 497          ** 说明    : 
+ 498          *******************************************************************************************/
+ 499          uint8 Get_UART_rx_buff (uint8 **p_buf,uint8 ch)
+ 500          {
+ 501   1          uint8 len ;
+ 502   1          
+ 503   1              if(ch > UART_CH_INDEX_MAX )  return 0;
+ 504   1          //
+ 505   1      
+ 506   1              *p_buf = &gs_uart_drv_var[ch].buff[0] ;
+ 507   1          
+ 508   1          //recv...
+ 509   1          if(gs_uart_drv_var[ch].rx_over_ticks <18)  //此处延时参数为判断数据接收结束的时间，需要配合时可以调整1
+             -80ms  //
+ 510   1          {
+ 511   2              return 0;
+ 512   2          }
+ 513   1      
+ 514   1           // recv ok    
+ 515   1          gs_uart_drv_var[ch].rx_over_ticks = 0;
+ 516   1          gs_uart_drv_var[ch].status = UART_STATUS_BUSY_RX_OVER;
+ 517   1      
+ 518   1          if(ch==UART_CH0_IR)
+ 519   1          {
+ 520   2              //close recv
+ 521   2              Dis_UART2_rx () ;
+ 522   2          }
+ 523   1      
+ 524   1          if(ch==UART_CH1_RS)
+ 525   1          {
+ 526   2              //close recv
+ 527   2              Dis_UART4_rx () ;
+ 528   2          }
+ 529   1          //
+ 530   1          len = gs_uart_drv_var[ch].buff_index;
+ 531   1          gs_uart_drv_var[ch].buff_index = 0;
+ 532   1          gs_uart_drv_var[ch].buff_index_back = 0;
+ 533   1      
+ 534   1          if(len >UART_BUFF_SIZE)
+ 535   1          {
+ 536   2              len = UART_BUFF_SIZE;
+ 537   2          }
+ 538   1          
+ 539   1          return len ;
+ 540   1      }
+ 541          
+ 542          
+ 543          
+ 544          
+ 545          
+ 546          /*******************************************************************************************
+ 547          **    END
+C51 COMPILER V9.01   DRV_UART                                                              01/31/2019 11:34:22 PAGE 10  
+
+ 548          *******************************************************************************************/
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1379    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    216      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

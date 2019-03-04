@@ -1,0 +1,433 @@
+C51 COMPILER V9.01   API_LOADPROFILE                                                       01/31/2019 11:34:27 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE API_LOADPROFILE
+OBJECT MODULE PLACED IN .\Api_LoadProfile.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S3_ApiPlat\Api_LoadProfile.C LARGE WARNINGLEVEL(1) BROWSE INCDI
+                    -R(..\C_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\C_S
+                    -ource\S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..\C_
+                    -Source\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Api_LoadProfile.lst) OBJECT(.\Api_LoadProfile.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          *Ä£¿éÃû   : LoadProfile.c
+   3          *Ïà¹ØÎÄ¼þ : 
+   4          *ÎÄ¼þ¹¦ÄÜ : ¸ººÉ¼ÇÂ¼´¦ÀíÄ£¿é
+   5          *×÷Õß     : ÑÐ·¢Èý²¿
+   6          *±àÐ´ÈÕÆÚ :
+   7          -------------------------------------------------------------------------------
+   8          *ÐÞ¸Ä¼ÇÂ¼ : 
+   9          *ÈÕ ÆÚ        °æ±¾     ÐÞ¸ÄÈË              ÐÞ¸ÄÄÚÈÝ
+  10          *YYYY/MM/DD   X.Y      <×÷Õß»òÐÞ¸ÄÕßÃû>    <ÐÞ¸ÄÄÚÈÝ>
+  11          *******************************************************************************/
+  12          #include <MyIncludes_H.h>
+  13          
+  14          
+  15          #if  FUNC_LoadPro   //¸ººÉ¼ÇÂ¼Ê¹ÄÜ¿ª¹Ø
+  16          
+  17          //----------------------------------------------------------------È«¾Ö±äÁ¿¶¨ÒåÇø
+  18          LPREAD      LPRd;            //¸ººÉ¼ÇÂ¼´æ´¢ÐÅÏ¢
+  19          LPRUNPARA   LPRunPa;         //¸ººÉ¼ÇÂ¼²ÎÊý
+  20          LPReadPRO  LPReadPara;
+  21          //-------------------------------------------------------------È«¾Ö±äÁ¿¶¨ÒåÇøend
+  22          
+  23          /*********************************************************************
+  24          Ô­ÐÍ£ºvoid LoadProRst(void)
+  25          ¹¦ÄÜ£º¸´Î»¸ººÉ±í
+  26          ±¸×¢£ºÎÞ¡£
+  27          *********************************************************************/
+  28          void LoadProRst(void)
+  29          {
+  30   1          Lib_Set_String( (uint8*)&LPRunPa, 0x00, (sizeof(LPRUNPARA)) );
+  31   1          mem_db_write( ADR_METER_PARAM1_LOAD_PTR, (uint8*)&LPRunPa, LP_RunPara_Len, MEM_E2P1);// ¸ººÉ¼ÇÂ¼Ö¸Õë¡¢
+             -¼ÇÂ¼¸öÊý  !!
+  32   1          
+  33   1          Lib_Set_String( &LPReadPara.Original_Ptr, 0, 5) ;           
+  34   1      
+  35   1      
+  36   1      
+  37   1      
+  38   1      }
+  39          
+  40          /*********************************************************************
+  41          Ô­ÐÍ£ºuchar ReadLPRunPa(void)
+  42          ¹¦ÄÜ£º¶ÁÈ¡¸ººÉ¼ÇÂ¼²ÎÊý
+  43          ±¸×¢£ºÎÞ¡£
+  44          *********************************************************************/
+  45          uchar ReadLPRunPa(void)
+  46          {
+  47   1          return TRUE;
+  48   1      }
+  49          
+  50          /*******************************************************************************
+  51                          Ïà¹ØÍ¨Ñ¶
+C51 COMPILER V9.01   API_LOADPROFILE                                                       01/31/2019 11:34:27 PAGE 2   
+
+  52          *********************************************************************************/
+  53          /*********************************************************************
+  54          Ô­ÐÍ£ºuchar LPRec_Read(void)
+  55          ¹¦ÄÜ£º¶Á¸ººÉ±íÊý¾Ý  -- ·ÖID
+  56          ±¸×¢£ºÎÞ¡£
+  57          *********************************************************************/
+  58          uchar LPRec_Read_1(INT8U *dst,INT16U idNo)
+  59          {
+  60   1              uchar  RecLen;
+  61   1              INT8U Buffer[20];
+  62   1              INT32U  LPAddr;
+  63   1              INT16U ptr;
+  64   1      
+  65   1      
+  66   1              if(LPRunPa.Ptr[0] >= idNo)
+  67   1              {
+  68   2                      ptr = LPRunPa.Ptr[0] - idNo;    // Ç°µÚ¼¸Ìõ
+  69   2              }
+  70   1              else
+  71   1              {
+  72   2                  ptr = LPRd.MaxRecNum - (idNo - LPRunPa.Ptr[0] );
+  73   2              }
+  74   1              
+  75   1              RecLen = 18;    //Ò»¸öÍ¨µÀÊý¾Ý³¤¶È
+  76   1              LPAddr = (ADR_BLOCK180_LOAD_START_E2P+ (INT32U)ptr*RecLen);
+  77   1              mem_read( &Buffer[0],LPAddr, RecLen, MEM_E2P1);
+  78   1              Lib_BCD_AscA(dst,(char*)&Buffer[0],RecLen); 
+  79   1      //      Lib_BCD_AscA(dst,(char*)&Buffer[0+5],4); 
+  80   1      //      Lib_BCD_AscA(dst,(char*)&Buffer[0+14],2); 
+  81   1      //      Lib_BCD_AscA(dst,(char*)&Buffer[0+21],3);
+  82   1      //  Lib_BCD_AscA(dst,(char*)&Buffer[0+29],RecLen);
+  83   1      
+  84   1        
+  85   1        return   (RecLen);
+  86   1      }
+  87          
+  88          
+  89          /*********************************************************************
+  90          Ô­ÐÍ£ºuchar LPRec_Read_Blank(void)
+  91          ¹¦ÄÜ£º¶Á¸ººÉ±íÊý¾Ý  -- ·ÖID
+  92          ±¸×¢£ºÎÞ¡£
+  93          *********************************************************************/
+  94          INT16U LPRec_Read_Block(INT8U *dst,INT16U StartARESS,INT16U EndARESS)
+  95          {
+  96   1              uchar Ch,RecLen;
+  97   1              INT8U Buffer[200];
+  98   1              INT32U  LPAddr,LPAddr2;
+  99   1              INT16U  HGAddr,LWAddr;
+ 100   1              INT16U ComLenth,ptr;
+ 101   1              INT16U ComNo;
+ 102   1              ST_U16_U08 TempLen;
+ 103   1      
+ 104   1              ptr =0; ComLenth =0;
+ 105   1              CLRWDT(); 
+ 106   1        if((LPReadPara.Original_FrameNum==0)||( LPReadPara.Original_FrameNum < StartARESS ))return(FALSE); 
+ 107   1              else LWAddr = StartARESS;
+ 108   1              
+ 109   1              if(EndARESS >= READLP_MAX_LEN) HGAddr = READLP_MAX_LEN-1;
+ 110   1              else    HGAddr = EndARESS;
+ 111   1              
+ 112   1              TempLen.u16 = HGAddr - LWAddr + 1;      
+ 113   1              
+C51 COMPILER V9.01   API_LOADPROFILE                                                       01/31/2019 11:34:27 PAGE 3   
+
+ 114   1              ptr = (LPReadPara.Original_Ptr+ READLP_MAX_LEN - LWAddr)%READLP_MAX_LEN ;       
+ 115   1              
+ 116   1              RecLen = 18;    //Ò»¸öÍ¨µÀÊý¾Ý³¤¶È
+ 117   1              
+ 118   1              LPAddr = (ADR_BLOCK180_LOAD_START_E2P);
+ 119   1        CLRWDT(); 
+ 120   1              for( Ch=0; Ch<BLOCK_MAX_LEN; Ch++)
+ 121   1              {
+ 122   2          LPAddr2=LPAddr+((ptr+ READLP_MAX_LEN-Ch)%READLP_MAX_LEN)*RecLen;
+ 123   2                      mem_read( &Buffer[0+Ch*RecLen],LPAddr2 , RecLen, MEM_E2P1);       
+ 124   2      
+ 125   2              }
+ 126   1      
+ 127   1              if(( TempLen.u16 >= ( LPReadPara.Original_FrameNum-StartARESS ))&&( LPReadPara.Original_FrameNum <READLP_
+             -MAX_LEN))
+ 128   1                      TempLen.u16 = LPReadPara.Original_FrameNum-StartARESS;
+ 129   1              
+ 130   1              if( TempLen.u16 <= BLOCK_MAX_LEN )
+ 131   1                      ComNo = TempLen.u16;
+ 132   1              else 
+ 133   1                      ComNo = BLOCK_MAX_LEN;
+ 134   1              ptr =0; 
+ 135   1              
+ 136   1              
+ 137   1              CLRWDT(); 
+ 138   1              for( Ch=0; Ch < ComNo; Ch++)
+ 139   1              {
+ 140   2                       Lib_BCD_AscA(dst+ptr,(char*)&Buffer[Ch*RecLen],RecLen); 
+ 141   2      //         ptr += 10;                   
+ 142   2      //               Lib_BCD_AscA(dst+ptr,(char*)&Buffer[5+Ch*RecLen],4); 
+ 143   2      //         ptr += 8;
+ 144   2      //               Lib_BCD_AscA(dst+ptr,(char*)&Buffer[14+Ch*RecLen],2); 
+ 145   2      //         ptr += 4;
+ 146   2      //               Lib_BCD_AscA(dst+ptr,(char*)&Buffer[21+Ch*RecLen],3); 
+ 147   2      //         ptr += 6;
+ 148   2      //               Lib_BCD_AscA(dst+ptr,(char*)&Buffer[29+Ch*RecLen],4); 
+ 149   2                 ptr += 36;
+ 150   2           ComLenth += 36;                    
+ 151   2              }
+ 152   1               
+ 153   1        return  (ComLenth);
+ 154   1      }
+ 155          
+ 156          /*********************************************************************
+ 157          Ô­ÐÍ£ºuchar Get_LoadRegNo(uchar Code)
+ 158          ¹¦ÄÜ£ºµÃµ½LoadReg±í¸ñÏÂ±ê
+ 159          ±¸×¢£ºÍ¨µÀºÅ´Ó0¿ªÊ¼
+ 160          *********************************************************************/
+ 161          //uchar Get_LoadRegNo(uchar Code)
+ 162          //{
+ 163          //    uchar i;
+ 164          //    
+ 165          //    for(i=0; i<CLPRegNum; i++)
+ 166          //    {
+ 167          //      if(Code == LPReg[i].Code)
+ 168          //          return i;
+ 169          //    }
+ 170          //    return FALSE_ERR;
+ 171          //}
+ 172          
+ 173          /*********************************************************************
+ 174          Ô­ÐÍ£ºchar Load_Rec(char Ch)
+C51 COMPILER V9.01   API_LOADPROFILE                                                       01/31/2019 11:34:27 PAGE 4   
+
+ 175          ¹¦ÄÜ£ºÊÖ¶¯¼ÇÂ¼¸ººÉÊý¾Ý
+ 176          ±¸×¢£ºÍ¨µÀºÅ´Ó0¿ªÊ¼
+ 177          *********************************************************************/
+ 178          
+ 179          //char Load_Rec(char Ch)//Ò»¸öÍ¨µÀ
+ 180          //{
+ 181          //    INT32U  LPAddr;
+ 182          //    INT8U   Len;  //,CTmp ,RegNo i,
+ 183          //    INT8U Buffer[20];
+ 184           
+ 185          
+ 186          //    if(Ch >= MaxLPCh) return FALSE;
+ 187          //    if( FALSE == ReadLPRunPa() ) return FALSE;
+ 188              /////////////////////////////////////////////////////////////////////////////////////////////       
+ 189              ///////////////////È¡Ò»¸öÍ¨µÀÒ»´Î¼ÇÂ¼Êý¾Ý
+ 190              /****Í¨µÀÊý¾ÝºÍÍ¨Ñ¶Ë³ÐòÏà·´
+ 191              Í¨Ñ¶Ë³Ðò:ÄêÔÂÈÕÊ±·Ö £¬REG1£¨¸ß~µÍ£©£¬REG2£¨¸ß~µÍ£©¡­¡­
+ 192              ´æ´¢Ë³Ðò£ºÄêÔÂÈÕÊ±·Ö £¬REG1£¨¸ß~µÍ£©£¬REG2£¨¸ß~µÍ£©¡­¡­
+ 193              *************************************/
+ 194          //    Lib_Set_String( (uchar*)&Buffer[0], 0x00, 20 );
+ 195          //    Len = 0;
+ 196          //       Lib_Copy_Str_TwoArry( (char*)&Buffer[Len], &gs_CurDateTime.Year, 5 );// È¡µ±Ç°Ê±¼ä
+ 197          //    Len += 5;
+ 198             //////¸ººÉ¼ÇÂ¼ÓÐ¹¦×ÜµçÁ¿ »ñÈ¡µçÁ¿ 4×Ö½Ú·ÅÈë   BUFF 5   ////////  4×Ö½ÚXXXXXX.XX  kwh  BCD 
+ 199          //     api_get_energy_LCD(&gs_energy_user_data.us_val[0][0].buf[0], 0x62,&Buffer[Len]);
+ 200          //     Len += 4;
+ 201             /*     ¸ººÉ¼ÇÂ¼ÐèÁ¿ 3×Ö½Ú·ÅÈë   BUFF 5   //////// ´æÈë¸ñÊ½ÎªXX.XXXX kw   BCD
+ 202                Lib_long_bcd4(&Buffer[6],gs_md_var.min_var[0].val_min);          //  16½øÖÆ×ª10½øÖÆ//             
+ 203                    Buffer[Len] =  0x00 ;
+ 204                    Buffer[Len+1]= Buffer[7];
+ 205                Buffer[Len+2]= Buffer[8]; 
+ 206                Buffer[Len+3]= Buffer[9]; 
+ 207                Len += 4;
+ 208                */
+ 209              //////´æÒ»¸öÍ¨µÀÒ»´Î¼ÇÂ¼Êý¾Ý//////////////
+ 210              //¸÷Í¨µÀ´æ´¢Ö¸ÕëºÍÌõÊý+1
+ 211          //    LPRunPa.Num[Ch]++;
+ 212          //    if( LPRunPa.Num[Ch] > LPRd.MaxRecNum ) LPRunPa.Num[Ch] = LPRd.MaxRecNum;
+ 213          //    LPRunPa.Ptr[Ch]++;
+ 214          //    if( LPRunPa.Ptr[Ch] > LPRd.MaxRecNum ) LPRunPa.Ptr[Ch] = 0;
+ 215          
+ 216          
+ 217          //    LPAddr = ADR_BLOCK180_LOAD_START_E2P;
+ 218          //    LPAddr += (INT32U)LPRunPa.Ptr[Ch]*Len;
+ 219          
+ 220          //      if((LPAddr +Len) > (ADR_BLOCK180_LOAD_START_E2P+LP_MAX_LEN*9))          // ³¬¹ý×î´óÇøÓò×Ö½ÚÊý   54000   
+ 221          //      {
+ 222          //              LPRunPa.Ptr[Ch] = 0;
+ 223          //              LPAddr = ADR_BLOCK180_LOAD_START_E2P;
+ 224          //              LPAddr += (INT32U)LPRunPa.Ptr[Ch]*Len;
+ 225          //      }
+ 226                      
+ 227          //    mem_write( (LPAddr),(char*)&Buffer[0], Len, MEM_E2P1);
+ 228          
+ 229          //    
+ 230          //    return TRUE;
+ 231          //}
+ 232          
+ 233          char Load_Rec(char Ch)//Ò»¸öÍ¨µÀ
+ 234          {
+ 235   1              INT32U  LPAddr;
+ 236   1              INT8U   Len;  //,CTmp ,RegNo i,
+C51 COMPILER V9.01   API_LOADPROFILE                                                       01/31/2019 11:34:27 PAGE 5   
+
+ 237   1              INT8U Buffer[20];
+ 238   1      
+ 239   1      
+ 240   1              if(Ch >= MaxLPCh) return FALSE;
+ 241   1              //    if( FALSE == ReadLPRunPa() ) return FALSE;
+ 242   1              /////////////////////////////////////////////////////////////////////////////////////////////   
+ 243   1              ///////////////////È¡Ò»¸öÍ¨µÀÒ»´Î¼ÇÂ¼Êý¾Ý
+ 244   1              /****Í¨µÀÊý¾ÝºÍÍ¨Ñ¶Ë³ÐòÏà·´
+ 245   1              Í¨Ñ¶Ë³Ðò:ÄêÔÂÈÕÊ±·Ö £¬REG1£¨¸ß~µÍ£©£¬REG2£¨¸ß~µÍ£©¡­¡­
+ 246   1              ´æ´¢Ë³Ðò£ºÄêÔÂÈÕÊ±·Ö £¬REG1£¨¸ß~µÍ£©£¬REG2£¨¸ß~µÍ£©¡­¡­
+ 247   1              *************************************/
+ 248   1              Lib_Set_String( (uchar*)&Buffer[0], 0x00, 20 );
+ 249   1              Len = 0;
+ 250   1              Lib_Copy_Str_TwoArry( (char*)&Buffer[Len], &gs_CurDateTime.Year, 5 );// È¡µ±Ç°Ê±¼ä
+ 251   1              Len += 5;
+ 252   1      //      switch (Ch)
+ 253   1      //      {
+ 254   1      //              case 0:
+ 255   1      //                      //////¸ººÉ¼ÇÂ¼ÓÐ¹¦×ÜµçÁ¿ »ñÈ¡µçÁ¿ 4×Ö½Ú·ÅÈë   BUFF 5   ////////  4×Ö½ÚXXXXXX.XX  kwh  BCD 
+ 256   1                              api_get_energy_LCD(&gs_energy_user_data.us_val[0][0].buf[0], 0x62,&Buffer[Len]);
+ 257   1                              Len += 4;
+ 258   1      //                      break;
+ 259   1      //              case 1:
+ 260   1                              //////¸ººÉ¼ÇÂ¼µ±Ç°µçÑ¹ »ñÈ¡µçÑ¹         2×Ö½Ú   xxx.x V BCD     
+ 261   1                              //api_get_energy_LCD(&gs_energy_user_data.us_val[0][0].buf[0], 0x62,&Buffer[Len]);
+ 262   1                              Lib_long_bcd4((char*)&Buffer[Len],gs_measure_var_data.gs_really[PHASE_TT].dw_u_val.u32);
+ 263   1                              Lib_Copy_Str_TwoArry( (char*)&Buffer[Len], (char*)&Buffer[Len+2], 2 );
+ 264   1                              Len += 2;
+ 265   1      //                      break;
+ 266   1      //              case 2:
+ 267   1                              //////¸ººÉ¼ÇÂ¼µ±Ç°µçÁ÷ »ñÈ¡µçÁ÷         3×Ö½ÚXXX.XXX A BCD
+ 268   1                              
+ 269   1                              Lib_long_bcd4((char*)&Buffer[Len],gs_measure_var_data.gs_really[PHASE_TT].dw_i_val.u32);
+ 270   1                              Lib_Copy_Str_TwoArry( (char*)&Buffer[Len], (char*)&Buffer[Len+1], 3 );
+ 271   1                              Len += 3;               
+ 272   1                              
+ 273   1      //                      break;
+ 274   1      //              case 3:
+ 275   1                              //////¸ººÉ¼ÇÂ¼µ±Ç°ÐèÁ¿ »ñÈ¡ÐèÁ¿         4×Ö½ÚXXXXXX.XX  kwh  BCD
+ 276   1                              mem_read((char*)&Buffer[Len], ADR_BLOCK01_MMD_L0_E2P, 4, MEM_E2P1);
+ 277   1                              Len += 4;
+ 278   1      //                      break;
+ 279   1      //              default:
+ 280   1      //                      break;
+ 281   1                      
+ 282   1                      
+ 283   1              
+ 284   1      
+ 285   1              /*     ¸ººÉ¼ÇÂ¼ÐèÁ¿ 3×Ö½Ú·ÅÈë   BUFF 5   //////// ´æÈë¸ñÊ½ÎªXX.XXXX kw   BCD
+ 286   1              Lib_long_bcd4(&Buffer[6],gs_md_var.min_var[0].val_min);          //  16½øÖÆ×ª10½øÖÆ//           
+ 287   1              Buffer[Len] =  0x00 ;
+ 288   1              Buffer[Len+1]= Buffer[7];
+ 289   1              Buffer[Len+2]= Buffer[8]; 
+ 290   1              Buffer[Len+3]= Buffer[9]; 
+ 291   1              Len += 4;
+ 292   1              */
+ 293   1              //////´æÒ»¸öÍ¨µÀÒ»´Î¼ÇÂ¼Êý¾Ý//////////////
+ 294   1              //¸÷Í¨µÀ´æ´¢Ö¸ÕëºÍÌõÊý+1
+ 295   1              LPRunPa.Num[Ch]++;
+ 296   1              if( LPRunPa.Num[Ch] > LPRd.MaxRecNum ) LPRunPa.Num[Ch] = LPRd.MaxRecNum;
+ 297   1              LPRunPa.Ptr[Ch]++;
+ 298   1              if( LPRunPa.Ptr[Ch] >= LPRd.MaxRecNum ) LPRunPa.Ptr[Ch] = 0;
+C51 COMPILER V9.01   API_LOADPROFILE                                                       01/31/2019 11:34:27 PAGE 6   
+
+ 299   1      
+ 300   1      
+ 301   1              LPAddr = ADR_BLOCK180_LOAD_START_E2P;
+ 302   1              LPAddr += (INT32U)LPRunPa.Ptr[Ch]*Len;
+ 303   1        
+ 304   1              mem_db_write( ADR_METER_PARAM1_LOAD_PTR, (uint8*)&LPRunPa, LP_RunPara_Len, MEM_E2P1);// ¸ººÉ¼ÇÂ¼Ö¸Õë¡¢¼ÇÂ
+             -¼¸öÊý  !!
+ 305   1      //      if((LPAddr +Len) > (ADR_BLOCK180_LOAD_START_E2P+LP_MAX_LEN*9))          // ³¬¹ý×î´óÇøÓò×Ö½ÚÊý   54000   
+ 306   1      //      {
+ 307   1      //              LPRunPa.Ptr[Ch] = 0;
+ 308   1      //              LPAddr = ADR_BLOCK180_LOAD_START_E2P;
+ 309   1      //              LPAddr += (INT32U)LPRunPa.Ptr[Ch]*Len;
+ 310   1      //      }
+ 311   1                  
+ 312   1      //      mem_write( (LPAddr),(char*)&Buffer[0], Len, MEM_DMFLASH);
+ 313   1              mem_write( (LPAddr),(char*)&Buffer[0], Len, MEM_E2P1);
+ 314   1      
+ 315   1              return TRUE;
+ 316   1      }
+ 317          
+ 318          
+ 319          /*********************************************************************
+ 320          Ô­ÐÍ£ºvoid LoadPro_Rec(void)
+ 321          ¹¦ÄÜ£º¸ººÉÊý¾Ý¼ÇÂ¼
+ 322          ±¸×¢£º
+ 323          *********************************************************************/
+ 324          void LoadPro_Rec(void)
+ 325          {
+ 326   1              INT8U Ch;
+ 327   1              INT16U Addr;
+ 328   1              INT16U TimeInv;
+ 329   1              INT8U flag;
+ 330   1              INT8U Buffer[2];
+ 331   1              
+ 332   1              for( Ch=0; Ch<MaxLPCh; Ch++ ) 
+ 333   1              {
+ 334   2                      Addr = ADR_METER_PARAM1_load_lptime_inv_var + 2*Ch;
+ 335   2                      //¶ÁÈ¡¸öÍ¨µÀ¼ÇÂ¼¼ä¸ôÊ±¼ä
+ 336   2                      mem_read( (char*)&Buffer[0], (int)Addr, 2, MEM_E2P1 );
+ 337   2                      TimeInv = Lib_bcd2_word((uchar *)&Buffer[0]);
+ 338   2                      if( TimeInv != 0 ) 
+ 339   2                      {
+ 340   3                              flag = 0;
+ 341   3                              if ( TimeInv <= 60 )      //Ð¡Ê±¼ÆËã£¬ÏÞ¶¨4Ð¡Ê±          
+ 342   3                              {
+ 343   4      #ifdef _DEBUGE_FUNCTION
+                                              Buffer[0] = Lib_bcd_byte(gs_CurDateTime.Second); 
+                                              if(!(Buffer[0]%TimeInv)) flag = 1;
+                                              // Buffer[0] = Lib_bcd_byte(gs_CurDateTime.Minute); 
+                                              // if(!(Buffer[0]%TimeInv)) flag = 1;
+              #endif          
+ 349   4                                      Buffer[0] = Lib_bcd_byte(gs_CurDateTime.Minute); 
+ 350   4                                      if(!(Buffer[0]%TimeInv)) flag = 1;
+ 351   4                              }       
+ 352   3                              if(flag)
+ 353   3                              {
+ 354   4                                      Load_Rec(Ch);
+ 355   4                              }
+ 356   3                      }
+ 357   2              }
+ 358   1      }
+ 359          
+C51 COMPILER V9.01   API_LOADPROFILE                                                       01/31/2019 11:34:27 PAGE 7   
+
+ 360          
+ 361          
+ 362          /*********************************************************************
+ 363          Ô­ÐÍ£ºvoid LoadPro_Rec(void)
+ 364          ¹¦ÄÜ£º¸ººÉÊý¾ÝÉÏµç³õÊ¼»¯
+ 365          ±¸×¢£ºÍ¨Ñ¶ÖÐÈôÒªµ÷ÓÃ£¬×¢ÒâÏÈ±£´æ¸ººÉ¼ÇÂ¼²ÎÊý
+ 366          *********************************************************************/
+ 367          void Init_LoadPro_param(void)
+ 368          {
+ 369   1      
+ 370   1              // ¼ÇµÃÉÏÒ»´Î¸ººÉ¼ÇÂ¼²ÎÊýµÄ±£´æ
+ 371   1              mem_read((char*)&LPRunPa, ADR_METER_PARAM1_LOAD_PTR, LP_RunPara_Len, MEM_E2P1);              
+ 372   1              //¶ÁÈ¡¼Ä´æÆ÷¸öÊý
+ 373   1              mem_read((char*)&LPRd.RegNum, ADR_METER_PARAM1_load_egcode_var, 1, MEM_E2P1);
+ 374   1              if( ( LPRd.RegNum < 1 ) || ( LPRd.RegNum > MaxLPReg ) ) 
+ 375   1              {
+ 376   2                      LPRd.RegNum = 1;
+ 377   2              }
+ 378   1              
+ 379   1              //È¡×î´ó¼ÇÂ¼ÌõÊý  
+ 380   1              LPRd.MaxRecNum =  LP_MAX_LEN ;   // ×î´ó60Ìì£¬Ã¿4Ð¡Ê±Ò»¸ö¼ÇÂ¼µÄÈÝÁ¿ Ê±¼ä+µçÁ¿   YYMMDDhhmm+[XXXXXX.XX]+[X
+             -X.XXXX]
+ 381   1      
+ 382   1              mem_read(&LPRd.loadp_reg_code[0],ADR_METER_PARAM1_load_egcode_var, 10, MEM_E2P1);       // ¶Á¼Ä´æÆ÷´úÂë
+ 383   1      
+ 384   1      #if DEBUG_TEST
+              
+              #endif
+ 387   1      
+ 388   1      }
+ 389          
+ 390          
+ 391          #endif  
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1745    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     25     285
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

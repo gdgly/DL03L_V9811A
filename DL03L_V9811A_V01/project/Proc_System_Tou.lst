@@ -1,0 +1,214 @@
+C51 COMPILER V9.01   PROC_SYSTEM_TOU                                                       01/31/2019 11:34:16 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE PROC_SYSTEM_TOU
+OBJECT MODULE PLACED IN .\Proc_System_Tou.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S0_System\Proc_System_Tou.c LARGE WARNINGLEVEL(1) BROWSE INCDIR
+                    -(..\C_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\C_So
+                    -urce\S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..\C_S
+                    -ource\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Proc_System_Tou.lst) OBJECT(.\Proc_System_Tou.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name                  : Proc_Tou.c
+   6          **Author                : maji
+   7          **date                  : 2016-04-20
+   8          **description   : 系统时标触发后的处理相关C代码
+   9          **note                  : V9811A ，MERTER FOR DL03C
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2016-04-26   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          #include <MyIncludes_H.h>
+  19          
+  20          
+  21          
+  22          RTC_TYPE gs_CurDateTime;
+  23          TOU_VAR  gs_tou_var;
+  24          
+  25          
+  26          
+  27          
+  28          /*****************************************************************************
+  29          ** Function name    :Proc_get_clock
+  30          **
+  31          ** Description         :获取当前RTC 时间全局变量数据  
+  32          **
+  33          ** Parameters         :NONE          
+  34          **
+  35          ** Returned value   :NONE
+  36          **
+  37          **----------------------------------------------------------------------------
+  38          ** V01.01  MJ  2016-04-23
+  39          ******************************************************************************/
+  40          void Proc_get_clock(void)
+  41          {
+  42   1       RTC_TYPE rtc_data_tmp;
+  43   1      
+  44   1          //获取当前时间数据数据   //
+  45   1          Get_RTCTime(&rtc_data_tmp);
+  46   1          if(Lib_Check_RTC_data_FORM(&rtc_data_tmp.Week) ==FALSE)
+  47   1          {
+  48   2              mem_read(&rtc_data_tmp.Week, ADR_METER_VAR_RTC, 7, MEM_E2P1);
+  49   2              if(Lib_Check_RTC_data_FORM(&rtc_data_tmp.Week) ==FALSE)
+  50   2              {
+  51   3                  // 默认 2016-4-20  12:30:30   WEEKDAY=3(周3) //
+  52   3                  rtc_data_tmp.Week= 3;       
+C51 COMPILER V9.01   PROC_SYSTEM_TOU                                                       01/31/2019 11:34:16 PAGE 2   
+
+  53   3                  rtc_data_tmp.Year = 0x16;
+  54   3                  rtc_data_tmp.Month = 0x04;
+  55   3                  rtc_data_tmp.Day= 0x20;
+  56   3                  rtc_data_tmp.Hour= 0x12;
+  57   3                  rtc_data_tmp.Minute= 0x30;
+  58   3                  rtc_data_tmp.Second= 0x30;
+  59   3                  mem_db_write(ADR_METER_VAR_RTC, &rtc_data_tmp.Week, 7, MEM_E2P1);
+  60   3              }
+  61   2              Set_RTCTime(&rtc_data_tmp);   
+  62   2          }
+  63   1          Lib_Copy_Str_TwoArry(&gs_CurDateTime.Week, &rtc_data_tmp.Week, 7);    //数据赋值 //
+  64   1         
+  65   1      }
+  66          
+  67          
+  68          /*****************************************************************************
+  69          ** Function name    :Proc_init_tou_var
+  70          **
+  71          ** Description         :获取当前RTC 时间全局变量数据  
+  72          **
+  73          ** Parameters         :NONE          
+  74          **
+  75          ** Returned value   :NONE
+  76          **
+  77          **----------------------------------------------------------------------------
+  78          ** V01.01  MJ  2016-04-23
+  79          ******************************************************************************/
+  80          void Proc_init_tou_var(void)
+  81          {
+  82   1          Proc_get_clock();
+  83   1            
+  84   1      }
+  85          
+  86          
+  87          /*****************************************************************************
+  88          ** Function name    :Proc_handl_tou_10ms
+  89          **
+  90          ** Description         :10ms中断产生后的程序处理        
+  91          **
+  92          ** Parameters         :NONE          
+  93          **
+  94          ** Returned value   :NONE
+  95          **
+  96          **----------------------------------------------------------------------------
+  97          ** V01.01  MJ  2016-04-23
+  98          ******************************************************************************/
+  99          void Proc_handl_tou_10ms(void)
+ 100          {
+ 101   1       uint8 i;
+ 102   1      
+ 103   1          //显示按键10ms 处理  //
+ 104   1          api_handl_dis_key_10ms();
+ 105   1          //通讯串口10ms 处理 //
+ 106   1          for(i=0;i<UART_CH_NUM;i++)
+ 107   1          {
+ 108   2              Hdl_UART_10ms_run(i);
+ 109   2              api_handl_COMM_pre_10ms(i);
+ 110   2          }
+ 111   1      
+ 112   1          // //
+ 113   1      }
+ 114          
+C51 COMPILER V9.01   PROC_SYSTEM_TOU                                                       01/31/2019 11:34:16 PAGE 3   
+
+ 115          
+ 116          
+ 117          /*****************************************************************************
+ 118          ** Function name    :Proc_handl_tou_10ms
+ 119          **
+ 120          ** Description         :10ms中断产生后的程序处理        
+ 121          **
+ 122          ** Parameters         :NONE          
+ 123          **
+ 124          ** Returned value   :NONE
+ 125          **
+ 126          **----------------------------------------------------------------------------
+ 127          ** V01.01  MJ  2016-04-23
+ 128          ******************************************************************************/
+ 129          void Proc_handl_tou_1s(void)
+ 130          {
+ 131   1          Proc_get_clock();
+ 132   1          
+ 133   1          // 秒处理部分  //
+ 134   1          check_EMU_per_second();         //EMU参数检查  //
+ 135   1          CLRWDT();
+ 136   1                api_measure_deal_pre_second();  //电参量获取  //
+ 137   1          CLRWDT();
+ 138   1                api_updata_md_var_min_per_second();  //需量秒计算处理 //
+ 139   1          CLRWDT();
+ 140   1                api_accum_current_energy_data_pre_second(); //电能脉冲秒处理 // 
+ 141   1          CLRWDT();
+ 142   1          api_updated_LCDDisplayItem_per_second();                // 显示项目每秒改变处理//
+ 143   1          CLRWDT();
+ 144   1                api_updated_LCDDisplayPixel_per_second();
+ 145   1          CLRWDT();
+ 146   1                api_updated_BG_per_second();  // 背光控制每秒更新处理//    
+ 147   1          CLRWDT();
+ 148   1                Proc_Check_PROKEY_Pre_sec();
+ 149   1      
+ 150   1          //电池欠压状态检测 //
+ 151   1          api_measure_VBAT_pre_min(); 
+ 152   1      
+ 153   1          api_even_Detect_sec();
+ 154   1                      //需量秒计算处理 /
+ 155   1           //分钟级处理  //
+ 156   1          if(gs_CurDateTime.Second == 0)
+ 157   1          {
+ 158   2              api_updata_md_var_slid_per_minute();   
+ 159   2              CLRWDT();
+ 160   2                                api_update_triffNo_pre_minute();  
+ 161   2              CLRWDT();
+ 162   2                                api_handl_settle_per_minute();
+ 163   2                                CLRWDT();
+ 164   2                                LoadPro_Rec();    
+ 165   2          }
+ 166   1        
+ 167   1          if(gs_CurDateTime.Second == 0x31)
+ 168   1          {
+ 169   2              api_measure_temperature_pre_min();     // 注意这个函数可选进行RTC温度补偿//
+ 170   2      
+ 171   2          }
+ 172   1              //开外壳检测
+ 173   1      //      if(Judge_ERR_COVER_key()==FALSE)
+ 174   1      //              api_deal_even_class1_recode(ID_CLASS_II_COVER,START);
+ 175   1      //      else 
+ 176   1      //              api_deal_even_class1_recode(ID_CLASS_II_COVER,END); 
+C51 COMPILER V9.01   PROC_SYSTEM_TOU                                                       01/31/2019 11:34:16 PAGE 4   
+
+ 177   1      }
+ 178          
+ 179          /***************************************************************
+ 180          *    END
+ 181          ****************************************************************/
+ 182          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    394    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     15       8
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

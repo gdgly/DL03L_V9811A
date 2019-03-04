@@ -1,0 +1,341 @@
+C51 COMPILER V9.01   API_BILL_RECORD                                                       01/31/2019 11:34:25 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE API_BILL_RECORD
+OBJECT MODULE PLACED IN .\Api_Bill_Record.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S3_ApiPlat\Api_Bill_Record.c LARGE WARNINGLEVEL(1) BROWSE INCDI
+                    -R(..\C_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\C_S
+                    -ource\S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..\C_
+                    -Source\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Api_Bill_Record.lst) OBJECT(.\Api_Bill_Record.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name: Api_Measure.c
+   6          **Author: maji
+   7          **date: 
+   8          **description: c code for ≤‚¡ø≥Ã–Ú”¶”√≤„
+   9          **note:  Driver code for GENERAL
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2015-10-21   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          #include <MyIncludes_H.h>
+  19          
+  20          
+  21          #if (BILL_MAX_NUM>0)
+  22          
+  23          
+  24          //*****************************************************************
+  25          //      Calculate the address of history data
+  26          //*****************************************************************
+  27          code BILL_INFO bill_info[] = 
+  28          {
+  29              ADR_BLOCK101_BILL1_DATA_E2P, ADR_BLOCK26_BILL_VAR_PTR_E2P,  LEN_BLOCK10X_BILLX_DATA_E2P,  BILL_MAX_NUM
+             -,   MEM_E2P1,                    // 0 µÁ¡øΩ·À„’Àµ•÷‹∆⁄ ˝   //
+  30          };   
+  31          
+  32          
+  33          /*****************************************************************************
+  34          ** Function name    :api_get_bill_record_addr
+  35          **
+  36          ** Description         : ªÒ»°÷∏∂®’Àµ•¿‡º«¬ºµƒæ¯∂‘µÿ÷∑( ‰»Îœ‡∂‘µÿ÷∑Œª÷√)    
+  37          **
+  38          ** Parameters         :INT16U addr:  ‰»Îœ‡∂‘µÿ÷∑Œª÷√       
+  39          **
+  40          ** Returned value   :INT16U addr:  ‰≥ˆæ¯∂‘µÿ÷∑Œª÷√  
+  41          **
+  42          **----------------------------------------------------------------------------
+  43          ** V01.01  MJ  2016-04-23
+  44          ******************************************************************************/
+  45          INT16U api_get_bill_record_addr( INT16U addr )
+  46          {
+  47   1       INT8U i,ptr,temp ,num;
+  48   1       INT16U hist_addr,len;
+  49   1      
+  50   1              for( i=0; i<(sizeof(bill_info)/sizeof(BILL_INFO)); i++ )
+  51   1              {
+C51 COMPILER V9.01   API_BILL_RECORD                                                       01/31/2019 11:34:25 PAGE 2   
+
+  52   2                      hist_addr = bill_info[i].head_adr;
+  53   2                      len = bill_info[i].data_size* (INT16U)bill_info[i].ptr_num;
+  54   2                      if( addr>=hist_addr && addr<(hist_addr+len) ) break;
+  55   2              }
+  56   1      
+  57   1              mem_read(&ptr, bill_info[i].ptr_adr, 1, bill_info[i].mem_type);
+  58   1              if( ptr>= bill_info[i].ptr_num)
+  59   1              {
+  60   2                  ptr = 0;
+  61   2              }
+  62   1              
+  63   1              hist_addr = addr - bill_info[i].head_adr;
+  64   1              temp = hist_addr / bill_info[i].data_size;
+  65   1              num = hist_addr - temp*bill_info[i].data_size;
+  66   1              if ( ptr < temp ) 
+  67   1              {
+  68   2                  ptr = ptr + ( bill_info[i].ptr_num -temp);    
+  69   2              }
+  70   1              else
+  71   1              {
+  72   2                  ptr = ptr - temp; 
+  73   2              }
+  74   1              addr = bill_info[i].head_adr+ ptr*(INT16U)bill_info[i].data_size +num;
+  75   1      
+  76   1              return  addr;
+  77   1      }
+  78          
+  79          
+  80          
+  81          /*****************************************************************************
+  82          ** Function name    :api_write_bill_data
+  83          **
+  84          ** Description         : –¥»Î’Àµ•¿‡º«¬ºµƒ ˝æ›
+  85          **
+  86          ** Parameters         :INT8U id: ’Àµ• ±º‰¿‡    
+  87          **
+  88          ** Returned value   :NONE
+  89          **
+  90          **----------------------------------------------------------------------------
+  91          ** V01.01  MJ  2016-04-23
+  92          ******************************************************************************/
+  93          void api_write_bill_data(INT8U id)
+  94          {
+  95   1      INT16U adr_tmp;
+  96   1      INT8U  ptr_tmp;
+  97   1      INT8U buff_int8u[BILL_BUFF_MAX_LEN];
+  98   1      
+  99   1      
+ 100   1          Lib_Clr_String(&buff_int8u[0],BILL_BUFF_MAX_LEN);
+ 101   1      
+ 102   1          // 1.µ˜’˚º«¬º ˝æ›µƒ÷∏’Î ˝æ›≤¢ªÒµ√ ˝æ›¥Ê¥¢µƒ ◊µÿ÷∑  //
+ 103   1          mem_read(&ptr_tmp, bill_info[id].ptr_adr, 1, MEM_E2P1);
+ 104   1          ptr_tmp++;
+ 105   1          if(ptr_tmp>(bill_info[id].ptr_num-1))   ptr_tmp = 0;  
+ 106   1          adr_tmp = bill_info[id].head_adr+ptr_tmp* bill_info[id].data_size;
+ 107   1          mem_db_write(bill_info[id].ptr_adr,&ptr_tmp, 1,  MEM_E2P1);
+ 108   1      
+ 109   1          // 2.ªÒ»° ˝æ›÷¡ ¬º˛º«¬ºµƒª∫≥Â«¯  //
+ 110   1          switch(id)
+ 111   1          {
+ 112   2              case BILL_ID0_MOTTH_SETTL:
+ 113   2                  buff_int8u[0]= gs_CurDateTime.Year;
+C51 COMPILER V9.01   API_BILL_RECORD                                                       01/31/2019 11:34:25 PAGE 3   
+
+ 114   2                  buff_int8u[1]= gs_CurDateTime.Month;
+ 115   2                  buff_int8u[2]= gs_CurDateTime.Day;
+ 116   2                  buff_int8u[3]= gs_CurDateTime.Hour;
+ 117   2                  buff_int8u[4]= gs_CurDateTime.Minute;
+ 118   2                  buff_int8u[5]= gs_CurDateTime.Second;
+ 119   2                  mem_db_write(ADR_BLOCK26_BILL_VAR_DATETTIME_E2P,&buff_int8u[0], 6,  MEM_E2P1); //µ±«∞◊ÓΩ¸1¥ŒΩ·
+             -À„µ„ ±º‰»’∆⁄º«¬º      //
+ 120   2      
+ 121   2                  Lib_Copy_Str_TwoArry(&buff_int8u[6], &gs_energy_user_data.us_val[0][0].buf[0],LEN_EC_CURRENT);
+ 122   2                  mem_read(((&buff_int8u[6])+LEN_EC_CURRENT), ADR_BLOCK01_MMD_L0_E2P, LEN_MMD_CURRENT, MEM_E2P1)
+             -;  
+ 123   2                  mem_db_write(adr_tmp,&buff_int8u[0], bill_info[id].data_size-2,  MEM_E2P1);
+ 124   2      
+ 125   2                  //µ±«∞–Ë¡ø«Â¡„  //
+ 126   2                  api_clr_current_MD_data();
+ 127   2              break;
+ 128   2      
+ 129   2              default:
+ 130   2                  sys_err();  
+ 131   2              break;
+ 132   2          }
+ 133   1          
+ 134   1      
+ 135   1      }
+ 136          
+ 137          
+ 138          /*****************************************************************************
+ 139          ** Function name    :api_handl_settle_per_minute
+ 140          **
+ 141          ** Description         :√ø∑÷÷”µ˜”√µƒ‘¬Ω·À„∫Ø ˝£¨µ±«∞ ±÷”µƒ»’ ± ±º‰∫ÕΩ·À„≤Œ ˝œ‡µ» ±Ω¯––‘¬Ω·À„¥¶¿Ì
+ 142          **
+ 143          ** Parameters         :NONE    
+ 144          **
+ 145          ** Returned value   :NONE
+ 146          **
+ 147          **----------------------------------------------------------------------------
+ 148          ** V01.01  MJ  2016-05-3
+ 149          ******************************************************************************/
+ 150          void api_handl_settle_per_minute(void)
+ 151          {
+ 152   1        uint8 param_settel[2];   //◊ÓΩ¸1¥ŒΩ·À„ ±º‰µ„ ƒÍ‘¬»’ ±∑÷√Î //
+ 153   1        ST_U16_U08 u16_hour_A,u16_hour_B;
+ 154   1      
+ 155   1          if(gs_CurDateTime.Minute != 0)   return;   //∑÷÷”∫Õ√Î∂ºŒ™0µƒ ±∫Ú¥¶¿Ì //
+ 156   1      
+ 157   1          mem_read(&param_settel[0], ADR_METER_PARAM1_SETL_DDHH, 2, MEM_E2P1);  //∂¡»°µÁ¡øΩ·À„»’( »’£¨ ±)//
+ 158   1          u16_hour_A.u16= Lib_bcd_byte(param_settel[0]) *24+ Lib_bcd_byte(param_settel[1]);    //ªªÀ„ªÒ»°Ω·À„≤Œ 
+             -˝–° ±µ•Œª ˝æ› //
+ 159   1          u16_hour_B.u16 = Lib_bcd_byte(gs_CurDateTime.Day)*24 + Lib_bcd_byte(gs_CurDateTime.Hour);     //ªªÀ„ªÒ
+             -»°µ±«∞ ±÷”µƒ»’ ±≤ø∑÷µƒ–° ±µ•Œª ˝æ› // 
+ 160   1      
+ 161   1          if((u16_hour_B.u16 - u16_hour_A.u16)==0)    //œ‡µ»‘ÚΩ·À„ //
+ 162   1          {
+ 163   2              api_write_bill_data(BILL_ID0_MOTTH_SETTL);      //µÁ¡øΩ·À„//    
+ 164   2          }
+ 165   1      }
+ 166          
+ 167          
+ 168          
+ 169          /*****************************************************************************
+ 170          ** Function name    :api_handl_settle_when_powerUp
+ 171          **
+C51 COMPILER V9.01   API_BILL_RECORD                                                       01/31/2019 11:34:25 PAGE 4   
+
+ 172          ** Description         :…œµÁ≤π‘¬Ω·À„”¶”√∫Ø ˝
+ 173          **
+ 174          ** Parameters         :NONE   
+ 175          **
+ 176          ** Returned value   :NONE
+ 177          **
+ 178          ** NOTE                :◊¢“‚‘⁄µ˜”√±æ∫Ø ˝«∞–Ë“™»∑±£œµÕ≥∂¡»°π˝RTC ˝æ›∫Õµ±«∞µÁ¡ø ˝æ›
+ 179          **
+ 180          **----------------------------------------------------------------------------
+ 181          ** V01.01  MJ  2016-05-03
+ 182          ******************************************************************************/
+ 183          void api_handl_settle_when_powerUp(void)
+ 184          {
+ 185   1        uint8 last_rec_dateTime[6];   //◊ÓΩ¸1¥ŒΩ·À„ ±º‰µ„ ƒÍ‘¬»’ ±∑÷√Î //
+ 186   1        uint8 param_settel[2];   //◊ÓΩ¸1¥ŒΩ·À„ ±º‰µ„ ƒÍ‘¬»’ ±∑÷√Î //
+ 187   1        ST_U16_U08 u16_month_A,u16_month_B;
+ 188   1        ST_U16_U08 u16_hour_A,u16_hour_B;
+ 189   1        uint16  months_no_settled;
+ 190   1        INT8U i,j; 
+ 191   1      
+ 192   1         
+ 193   1          mem_read(&last_rec_dateTime[0], ADR_BLOCK26_BILL_VAR_DATETTIME_E2P, 6, MEM_E2P1); //∂¡»°…œ¥ŒΩ·À„ ±º‰(ƒ
+             -Í‘¬»’ ±∑÷√Î )
+ 194   1          u16_month_A.u16 = Lib_bcd_byte(last_rec_dateTime[0])*12 + Lib_bcd_byte(last_rec_dateTime[1]);           //◊Ó
+             -Ω¸1¥ŒΩ·À„µƒ‘¬µ•Œª ˝æ› //
+ 195   1          u16_month_B.u16 = Lib_bcd_byte(gs_CurDateTime.Year)*12 + Lib_bcd_byte(gs_CurDateTime.Month);        
+ 196   1          mem_read(&param_settel[0], ADR_METER_PARAM1_SETL_DDHH, 2, MEM_E2P1);  //∂¡»°µÁ¡øΩ·À„»’( »’£¨ ±)//
+ 197   1          u16_hour_A.u16 = Lib_bcd_byte(param_settel[0]) *24+ Lib_bcd_byte(param_settel[1]);
+ 198   1          u16_hour_B.u16 = Lib_bcd_byte(gs_CurDateTime.Day)*24 + Lib_bcd_byte(gs_CurDateTime.Hour);   
+ 199   1      
+ 200   1              if(u16_month_A.u16>u16_month_B.u16)
+ 201   1              {
+ 202   2                      months_no_settled = 1;   // ◊ÓΩ¸1¥ŒΩ·À„ ±º‰¥Û”⁄µ±«∞ ±º‰ ±£¨ƒ¨»œ≤π1¥ŒΩ·À„ //
+ 203   2              }
+ 204   1              else
+ 205   1              {
+ 206   2                      months_no_settled = u16_month_B.u16- u16_month_A.u16;
+ 207   2              }
+ 208   1      
+ 209   1          j=0;//≤πΩ·À„µƒº«¬ºÃı ˝«Â¡„  //
+ 210   1          for(i=0;i<(MAX_Fill_SETTLED_MONTHS+1);i++)
+ 211   1          {
+ 212   2              if(j>= MAX_Fill_SETTLED_MONTHS)  break;
+ 213   2              if(months_no_settled==0)   break;
+ 214   2              if(months_no_settled==1)   
+ 215   2              {
+ 216   3                  if(u16_hour_B.u16>= u16_hour_A.u16)
+ 217   3                  {
+ 218   4                      api_write_bill_data(BILL_ID0_MOTTH_SETTL);      //‘¬Ω·À„//              
+ 219   4                      CLRWDT();
+ 220   4                      j++;
+ 221   4                      months_no_settled--;
+ 222   4                  }
+ 223   3                  else
+ 224   3                  {
+ 225   4                      break;
+ 226   4                  }
+ 227   3              } 
+ 228   2              else
+ 229   2              {
+ 230   3                  api_write_bill_data(BILL_ID0_MOTTH_SETTL);  //‘¬Ω·À„//              
+ 231   3                  CLRWDT();
+C51 COMPILER V9.01   API_BILL_RECORD                                                       01/31/2019 11:34:25 PAGE 5   
+
+ 232   3                  j++;
+ 233   3                  months_no_settled--;  
+ 234   3              } 
+ 235   2          }    
+ 236   1      }
+ 237          
+ 238          
+ 239          
+ 240          /*****************************************************************************
+ 241          ** Function name    :api_clr_current_energy_data
+ 242          **
+ 243          ** Description         :µ±«∞µÁƒ‹ ˝æ›µƒ«Â¡„¥¶¿Ì
+ 244          **
+ 245          ** Parameters         :NONE          
+ 246          **
+ 247          ** Returned value   :NONE
+ 248          **
+ 249          **----------------------------------------------------------------------------
+ 250          ** V01.01  MJ  2016-04-23
+ 251          ******************************************************************************/
+ 252          void api_clr_bill_data(void)
+ 253          {
+ 254   1          E2P_BILL_VAR_MAP  tmp_bill_var;
+ 255   1      
+ 256   1           CLRWDT();
+ 257   1          Lib_Clr_String(&tmp_bill_var.bill_var.ptrNo,LEN_BILL_EXRAM_VAR);
+ 258   1          mem_db_write(ADR_BLOCK26_BILL_VAR_E2P,&tmp_bill_var.bill_var.ptrNo, LEN_BILL_EXRAM_VAR,  MEM_E2P1); //
+             -«Â≥˝÷∏’Îº«¬º // 
+ 259   1          CLRWDT();
+ 260   1          
+ 261   1          mem_fill(ADR_BLOCK101_BILL1_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P, 0x00, MEM_E2P1);
+ 262   1          CLRWDT();
+ 263   1          mem_fill(ADR_BLOCK102_BILL2_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 264   1          CLRWDT();
+ 265   1          mem_fill(ADR_BLOCK103_BILL3_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 266   1          CLRWDT();
+ 267   1          mem_fill(ADR_BLOCK104_BILL4_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 268   1          CLRWDT();
+ 269   1          mem_fill(ADR_BLOCK105_BILL5_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 270   1          CLRWDT();
+ 271   1          mem_fill(ADR_BLOCK106_BILL6_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 272   1          CLRWDT();
+ 273   1          mem_fill(ADR_BLOCK107_BILL7_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 274   1          CLRWDT();
+ 275   1          mem_fill(ADR_BLOCK108_BILL8_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 276   1          CLRWDT();
+ 277   1          mem_fill(ADR_BLOCK109_BILL9_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 278   1          CLRWDT();
+ 279   1          mem_fill(ADR_BLOCK110_BILL10_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 280   1          CLRWDT();
+ 281   1          mem_fill(ADR_BLOCK111_BILL11_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 282   1          CLRWDT();
+ 283   1          mem_fill(ADR_BLOCK112_BILL12_DATA_E2P, LEN_BLOCK10X_BILLX_DATA_E2P-2, 0x00, MEM_E2P1);
+ 284   1          CLRWDT();
+ 285   1          
+ 286   1      }
+ 287          
+ 288          
+ 289          
+ 290          
+ 291          #endif
+ 292          
+C51 COMPILER V9.01   API_BILL_RECORD                                                       01/31/2019 11:34:25 PAGE 6   
+
+ 293          /***************************************************************
+ 294          *    END
+ 295          ****************************************************************/
+ 296          
+ 297          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1878    ----
+   CONSTANT SIZE    =      8    ----
+   XDATA SIZE       =   ----     121
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

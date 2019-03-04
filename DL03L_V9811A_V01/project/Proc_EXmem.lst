@@ -1,0 +1,568 @@
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE PROC_EXMEM
+OBJECT MODULE PLACED IN .\Proc_EXmem.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S0_System\Proc_EXmem.c LARGE WARNINGLEVEL(1) BROWSE INCDIR(..\C
+                    -_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\C_Source\
+                    -S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..\C_Source
+                    -\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Proc_EXmem.lst) OBJECT(.\Proc_EXmem.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name                  : Proc_EXmem.c
+   6          **Author                : maji
+   7          **date                  : 2016-04-20
+   8          **description   : Íâ²¿´æ´¢Æ÷´¦ÀíÏà¹ØC´úÂë
+   9          **note                  : V9811A £¬MERTER FOR DL03C
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2016-04-26   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          #include <MyIncludes_H.h>
+  19          
+  20          // 1 E2P Êý¾Ý·ÖÇø½á¹¹¶¨Òå   //
+  21          const  E2P_CHECK_TAB  code mem_table[] = {
+  22              //block-0 µ±Ç°µçÁ¿Êý¾Ý¿é  //
+  23              No_BLOCK00_EC_L0_E2P,      MEM_E2P1,   ADR_BLOCK00_EC_L0_E2P,  LEN_BLOCK00_EC_L0_E2P,
+  24              //block-1  µ±Ç°ÔÂ×î´óÐèÁ¿Êý¾Ý¿é  //
+  25              No_BLOCK01_MMD_L0_E2P,      MEM_E2P1,   ADR_BLOCK01_MMD_L0_E2P, LEN_BLOCK01_MMD_L0_E2P,
+  26              //BLOCK20  µç±í²ÎÊýÇø1 //
+  27              No_BLOCK20_METER_PARAM1_E2P,    MEM_E2P1,   ADR_BLOCK20_METER_PARAM1_E2P, LEN_BLOCK20_METER_PARAM1_E2P
+             -,
+  28                  //¶þÀàÊÂ¼þ²ÎÊýÇø
+  29                  No_BLOCK27_EVENII_data,          MEM_E2P1,   ADR_BLOCK27_EVENII_E2P,   LEN_CLASSII_VAR,
+  30                  //BLOCK25 µç±í±äÁ¿Êý¾ÝÇø//
+  31                  No_BLOCK25_METER_VAR_E2P,    MEM_E2P1,   ADR_BLOCK25_METER_VAR_E2P, LEN_BLOCK25_METER_VAR_E2P,
+  32              //BLOCK70  EMU Ð£±í²ÎÊýÇø//
+  33              No_BLOCK70_EMU_PARAM_E2P,    MEM_E2P1,   ADR_BLOCK70_EMU_PARAM_E2P, LEN_BLOCK70_EMU_PARAM_E2P,
+  34              //BLOCK21  µç±í²ÎÊýÇø-ÏÔÊ¾²ÎÊýÇø //
+  35              No_BLOCK21_DIS_PARAM_E2P,    MEM_E2P1,   ADR_BLOCK21_DIS_PARAM_E2P, LEN_BLOCK21_DIS_PARAM_E2P,
+  36           //block-81~84  ·ÑÂÊÏà¹Ø²ÎÊýÊý¾Ý¿é   //
+  37          #if (TARIFF_MAX_NUM>1)
+  38          #if(MAX_NUM_HOLIDAY_TAB>0)  
+                  //block-81 ½Ú¼ÙÈÕ±íÊý¾Ý¿é   //
+                  No_BLOCK81_HILIDAY_TAB_E2P,    MEM_E2P1,    ADR_BLOCK81_HILIDAY_TAB_E2P,    LEN_HoliTab,
+              #endif
+  42              //block-82 ¼¾½Ú±íÊý¾Ý¿é   //
+  43              No_BLOCK82_SEASON_TAB_E2P,    MEM_E2P1,    ADR_BLOCK82_SEASON_TAB_E2P,    LEN_SeasonTab,
+  44              //block-83 ÖÜ±íÊý¾Ý¿é   //
+  45              No_BLOCK83_WEEK_TAB_E2P,    MEM_E2P1,    ADR_BLOCK83_WEEK_TAB_E2P,    LEN_WeekTab,
+  46              //block-84 ÈÕÊ±¶Î±íÊý¾Ý¿é   //
+  47              No_BLOCK84_DAY_TAB_E2P,    MEM_E2P1,    ADR_BLOCK84_DAY_TAB_E2P,    LEN_DayTab,
+  48          #endif
+  49          
+  50          
+  51              //BLOCK100~136 ÔÂ½áËãÊý¾ÝÇø  //
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 2   
+
+  52          #if (BILL_MAX_NUM>0)
+  53              No_BLOCK26_BILL_VAR_E2P,       MEM_E2P1,    ADR_BLOCK26_BILL_VAR_E2P,       LEN_BLOCK26_BILL_VAR_E2P,
+  54              No_BLOCK101_BILL1_DATA_E2P,    MEM_E2P1,    ADR_BLOCK101_BILL1_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  55              No_BLOCK102_BILL2_DATA_E2P,    MEM_E2P1,    ADR_BLOCK102_BILL2_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  56              No_BLOCK103_BILL3_DATA_E2P,    MEM_E2P1,    ADR_BLOCK103_BILL3_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  57              No_BLOCK104_BILL4_DATA_E2P,    MEM_E2P1,    ADR_BLOCK104_BILL4_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  58              No_BLOCK105_BILL5_DATA_E2P,    MEM_E2P1,    ADR_BLOCK105_BILL5_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  59              No_BLOCK106_BILL6_DATA_E2P,    MEM_E2P1,    ADR_BLOCK106_BILL6_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  60              No_BLOCK107_BILL7_DATA_E2P,    MEM_E2P1,    ADR_BLOCK107_BILL7_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  61              No_BLOCK108_BILL8_DATA_E2P,    MEM_E2P1,    ADR_BLOCK108_BILL8_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  62              No_BLOCK109_BILL9_DATA_E2P,    MEM_E2P1,    ADR_BLOCK109_BILL9_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_E2
+             -P,
+  63              No_BLOCK110_BILL10_DATA_E2P,    MEM_E2P1,    ADR_BLOCK110_BILL10_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_
+             -E2P,
+  64              No_BLOCK111_BILL11_DATA_E2P,    MEM_E2P1,    ADR_BLOCK111_BILL11_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_
+             -E2P,
+  65              No_BLOCK112_BILL12_DATA_E2P,    MEM_E2P1,    ADR_BLOCK112_BILL12_DATA_E2P,    LEN_BLOCK10X_BILLX_DATA_
+             -E2P,
+  66          #endif
+  67          
+  68          //    //ÊÂ¼þ¼ÇÂ¼Çø //
+  69          //    No_BLOCK150_EVENI_PROG_E2P,       MEM_E2P1,    ADR_BLOCK150_EVENI_PROG_E2P,       LEN_BLOCK15X_EVENI
+             -_E2P,
+  70          //    No_BLOCK151_EVENI_resetMD_E2P,       MEM_E2P1,    ADR_BLOCK151_EVENI_resetMD_E2P,       LEN_BLOCK15X
+             -_EVENI_E2P,
+  71          //    No_BLOCK152_EVENI_setRtc_E2P,       MEM_E2P1,    ADR_BLOCK152_EVENI_setRtc_E2P,       LEN_BLOCK15X_E
+             -VENI_E2P,
+  72          //    No_BLOCK153_EVENI_powerDown_E2P,       MEM_E2P1,    ADR_BLOCK153_EVENI_powerDown_E2P,       LEN_BLOC
+             -K15X_EVENI_E2P,
+  73          };
+  74          
+  75          
+  76          //-------------------------------------------------------------------------------//
+  77          //  Function:      INT16U get_mem_ck_data( INT16U src, INT8U  lenth, INT8U memType )             
+  78          //  Description:   ¼ÆËãËù¸øµØÖ·¿ªÊ¼µÄ³¤¶ÈÎªLENTHµÄÀÛ¼ÓÐ£ÑéºÍ
+  79          //  Parameters:     
+  80          //  Returns:                                  
+  81          //  Others:  
+  82          //-------------------------------------------------------------------------------//
+  83          INT16U get_mem_ck_data( INT16U src, INT16U  lenth, INT8U memType )
+  84          {
+  85   1       INT8U size;
+  86   1       INT8U tmpBuf[E2P_PAGE];
+  87   1       INT16U   sum = CHECKWORD;
+  88   1      
+  89   1          while( lenth > 0 )
+  90   1          {
+  91   2              if( lenth >= E2P_PAGE) 
+  92   2              {
+  93   3                  size = E2P_PAGE;
+  94   3              }
+  95   2              else
+  96   2              {
+  97   3                  size = lenth;
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 3   
+
+  98   3              }
+  99   2              mem_read(&tmpBuf[0], src, size, memType);
+ 100   2              sum +=Lib_get_csck_int16u_num((INT8U*)&tmpBuf[0], size ,0x0000) ;
+ 101   2              src += size;
+ 102   2              lenth -= size;
+ 103   2         }
+ 104   1          
+ 105   1          return sum ;
+ 106   1      }
+ 107          
+ 108          
+ 109          /**********************************************************************
+ 110                  Get Check Table Point
+ 111          //ÉÏ²ãµ÷ÓÃµÄ²Ù×÷ÀàÐÍºÍËù¶ÔÓ¦µÄ´æ´¢µÄµØÖ·Ò»ÖÂ
+ 112            RAM¾Í²éÕÒRAMµÄµØÖ·£¬E2¾Í²éÕÒE2µÄµØÖ·£¬µÈµÈ¡£
+ 113            µØÖ·Êý¾ÝÀàÐÍÎªint ÐÍ  
+ 114          **********************************************************************/
+ 115          INT8U get_mem_table_Index( INT16U adr, INT8U memType )   
+ 116          {
+ 117   1       INT8U  i;
+ 118   1       INT8U  len;
+ 119   1       INT16U blkAddr; 
+ 120   1              
+ 121   1          for( i=0; i<(sizeof(mem_table)/sizeof(E2P_CHECK_TAB)); i++ ) 
+ 122   1          {
+ 123   2              if(memType == mem_table[i].mem_type)
+ 124   2              {
+ 125   3                  if(memType != MEM_E2P1)
+ 126   3                  {
+ 127   4                      return 0xff;
+ 128   4                  }
+ 129   3                  else
+ 130   3                  {
+ 131   4                      blkAddr =mem_table[i].u16_adr;
+ 132   4                  }
+ 133   3                  len = mem_table[i].u16_len;
+ 134   3      
+ 135   3                  if( (adr>=blkAddr) && (adr<(blkAddr+len)) )
+ 136   3                  {
+ 137   4                      return i;
+ 138   4                  }
+ 139   3              }
+ 140   2          }
+ 141   1          return 0xff;
+ 142   1      }
+ 143          
+ 144          
+ 145          /**********************************************************************
+ 146                  Move Data from Memory to Memory
+ 147          **********************************************************************/
+ 148          void mem_to_mem( INT16U dst, INT16U src, INT16U lenth, INT8U mode )
+ 149          {
+ 150   1              INT8U   tmp_Buffer[E2P_PAGE];
+ 151   1              INT8U           size;
+ 152   1      
+ 153   1                        while( lenth > 0 )
+ 154   1                 {
+ 155   2                            if( lenth > E2P_PAGE )
+ 156   2                            {
+ 157   3                                size = E2P_PAGE;
+ 158   3                            }
+ 159   2                            else
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 4   
+
+ 160   2                            {
+ 161   3                                size = lenth;
+ 162   3                            }
+ 163   2                            mem_read(&tmp_Buffer[0], src, size, (mode>>4)&0x0F );
+ 164   2                              CLRWDT();
+ 165   2                            mem_write( dst, &tmp_Buffer[0], size, mode&0x0F  );
+ 166   2                            dst += size;
+ 167   2                            src += size;
+ 168   2                            lenth -= size;
+ 169   2                 }
+ 170   1      
+ 171   1      }
+ 172          
+ 173          
+ 174          /**********************************************************************
+ 175                  Fill Data to Memory(Flash, InfoFlash, FRAM, EEPROM, DataFlash)
+ 176          **********************************************************************/
+ 177          void mem_fill( INT16U dst, INT16U lenth, INT8U xx, INT8U memType )
+ 178          {
+ 179   1      INT8U   tmp_Buffer[E2P_PAGE];
+ 180   1      INT8U size;
+ 181   1      
+ 182   1          Lib_Set_String(&tmp_Buffer[0], xx, E2P_PAGE);
+ 183   1      
+ 184   1                 while( lenth > 0 )
+ 185   1                 {
+ 186   2                            if( lenth > E2P_PAGE )
+ 187   2                            {
+ 188   3                                size = E2P_PAGE;
+ 189   3                            }
+ 190   2                            else
+ 191   2                            {
+ 192   3                                size = lenth;
+ 193   3                            }
+ 194   2                            mem_write( dst, &tmp_Buffer[0], size, memType );
+ 195   2                              CLRWDT();
+ 196   2                            dst += size;
+ 197   2                            lenth -= size;
+ 198   2                 }
+ 199   1      }
+ 200          
+ 201          /**********************************************************************
+ 202                  Read Data to Memory(FRAM, EEPROM, DataFlash)
+ 203          **********************************************************************/
+ 204          void mem_read( INT8U* dst,  INT16U src, INT16U lenth, INT8U memType )
+ 205          {
+ 206   1           INT8U  *ptr_adr;
+ 207   1               
+ 208   1          switch( memType )
+ 209   1          {
+ 210   2              case MEM_RAM:
+ 211   2                  ptr_adr = &((INT8U *)src);
+ 212   2                  Lib_Copy_Str_TwoArry( dst, ptr_adr, lenth );
+ 213   2              break;
+ 214   2      
+ 215   2              case MEM_E2P1:
+ 216   2                  Read_EEPROM(dst,src, lenth);   //E2P_Read( Dest, Src, Lenth );
+ 217   2              break;
+ 218   2      
+ 219   2              default:
+ 220   2                  sys_err();
+ 221   2              break;
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 5   
+
+ 222   2          }
+ 223   1      }
+ 224          
+ 225          /**********************************************************************
+ 226                  Write Data to Memory( FRAM, EEPROM, DataFlash )
+ 227          **********************************************************************/
+ 228          void mem_write( INT16U dst,  INT8U *src, INT16U lenth, INT8U memType )
+ 229          {
+ 230   1      INT8U  *ptr_adr;
+ 231   1      
+ 232   1          switch( memType )
+ 233   1          {
+ 234   2              case MEM_RAM:
+ 235   2                  ptr_adr = &((INT8U *)dst);
+ 236   2                  Lib_Copy_Str_TwoArry( ptr_adr, src, lenth ); //memcpy( (char*)Dest, Src, Lenth );
+ 237   2              break;
+ 238   2      
+ 239   2              case MEM_E2P1:
+ 240   2                  Write_EEPROM(dst,src, lenth);                              //E2P_Write( Dest, Src, Lenth );
+ 241   2              break;
+ 242   2      
+ 243   2              default:
+ 244   2                  sys_err();
+ 245   2      
+ 246   2              break;
+ 247   2          }
+ 248   1      }
+ 249          
+ 250          
+ 251          
+ 252          /*
+ 253          //-------------------------------------------------------------------------------//
+ 254          //  Function:      void MemWrite( unsigned int dst,  char *src, int lenth, char memType )               
+ 255          //  Description:  ½«Ö¸¶¨µÄRAMÇø srcµØÖ·ÆðÊ¼µÄÊý¾ÝÐ´ÈëÓÃmemTypeÖ¸¶¨µÄÀàÐÍÆ÷¼þÊý¾ÝÇø
+ 256          //  Parameters:  char *dst : Ä¿±êÊý¾ÝÇøÊ×µØÖ·
+ 257          //                     unsigned int src: Ô´Êý¾ÝÇøÊ×µØÖ·£¬RAMÇø
+ 258          //                     int lenth  :  Êý¾Ý²Ù×÷³¤¶È
+ 259          //                     char memType  : ´æ´¢Æ÷²Ù×÷ÀàÐÍ
+ 260          //  Returns:       ÎÞ                            
+ 261          //  Others:        
+ 262          //-------------------------------------------------------------------------------//
+ 263          */
+ 264          void mem_db_write( INT16U dst,  INT8U *src, INT16U len, INT8U memType )
+ 265          {
+ 266   1      INT8U index;
+ 267   1      ST_U16_U08 checkNum;
+ 268   1      INT16U adr_dst;
+ 269   1      INT16U adr_csck;
+ 270   1      INT8U lenth;
+ 271   1      INT8U id_No;
+ 272   1      
+ 273   1          //»ñÈ¡Êý¾ÝË÷ÒýºÅ//
+ 274   1          index = get_mem_table_Index(dst, memType );
+ 275   1              
+ 276   1          if(index >= (sizeof(mem_table)/sizeof(E2P_CHECK_TAB)))
+ 277   1          {
+ 278   2              sys_err();
+ 279   2          }
+ 280   1          adr_dst = mem_table[index].u16_adr ;
+ 281   1          lenth = mem_table[index].u16_len-2;
+ 282   1          adr_csck =  adr_dst + lenth;  
+ 283   1          id_No = mem_table[index].u8_No;
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 6   
+
+ 284   1      
+ 285   1          mem_write(dst, src, len, memType);
+ 286   1          checkNum.u16 = get_mem_ck_data(adr_dst, lenth, MEM_E2P1);
+ 287   1          mem_write(adr_csck, &checkNum.B08[0], 2, MEM_E2P1);
+ 288   1          if(id_No<100) 
+ 289   1          {  
+ 290   2              mem_write(dst+E2PBAK_SIZE, src, len, memType);
+ 291   2              mem_write(adr_csck+E2PBAK_SIZE, &checkNum.B08[0], 2, MEM_E2P1);
+ 292   2          }
+ 293   1      
+ 294   1      }
+ 295          
+ 296          
+ 297          /****************************************************************
+ 298          Function:               void SysInitialize(void)  
+ 299          Description:            ÏµÍ³ÉÏµç/¸´Î»³õÊ¼»¯º¯Êý 
+ 300          Input:                  no
+ 301          Parameters:             no
+ 302          Returns:                        no                        
+ 303          Others:         
+ 304          ****************************************************************/
+ 305          void get_default_mem_data(uint8 index)
+ 306          {
+ 307   1       uint16 adrAry;
+ 308   1       uint16 lenth;
+ 309   1       uint8 i;
+ 310   1      
+ 311   1          for(i=0;i<(sizeof(mem_table)/sizeof(E2P_CHECK_TAB));i++ )
+ 312   1          {
+ 313   2              if(index == mem_table[i].u8_No)   break;
+ 314   2          }
+ 315   1       
+ 316   1          if(i>=(sizeof(mem_table)/sizeof(E2P_CHECK_TAB)))   return;
+ 317   1      
+ 318   1              
+ 319   1          adrAry= mem_table[i].u16_adr;
+ 320   1          lenth = mem_table[i].u16_len-2;
+ 321   1          
+ 322   1          switch(index)
+ 323   1          {
+ 324   2              case No_BLOCK20_METER_PARAM1_E2P:
+ 325   2                  mem_write(adrAry, (INT8U*)&default_meter_parm1_tab, lenth,  MEM_E2P1);
+ 326   2              break;          
+ 327   2              case No_BLOCK21_DIS_PARAM_E2P:
+ 328   2                  mem_write(adrAry, (INT8U*)&default_dis_param_tab, lenth,  MEM_E2P1);
+ 329   2              break;  
+ 330   2      
+ 331   2              case No_BLOCK70_EMU_PARAM_E2P:
+ 332   2                  mem_write(adrAry, (INT8U*)&default_adj_emu_param_tab, lenth,  MEM_E2P1);
+ 333   2              break;
+ 334   2      #if (TARIFF_MAX_NUM>1)
+ 335   2      #if(MAX_NUM_HOLIDAY_TAB>0)  
+                      case No_BLOCK81_HILIDAY_TAB_E2P:
+                          mem_write(adrAry, (INT8U*)&default_triff_holiday_tab, lenth,  MEM_E2P1);//block-81 ½Ú¼ÙÈÕ±íÊý¾
+             -Ý¿é   //
+                      break;
+              #endif
+ 340   2              case No_BLOCK82_SEASON_TAB_E2P:
+ 341   2                  mem_write(adrAry, (INT8U*)&default_triff_season_tab, lenth,  MEM_E2P1); //block-82 ¼¾½Ú±íÊý¾Ý¿
+             -é   //
+ 342   2              break;
+ 343   2      
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 7   
+
+ 344   2              case No_BLOCK83_WEEK_TAB_E2P:
+ 345   2                  mem_write(adrAry, (INT8U*)&default_triff_week_tab, lenth,  MEM_E2P1);//block-83 ÖÜ±íÊý¾Ý¿é   /
+             -/
+ 346   2              break;
+ 347   2      
+ 348   2              case No_BLOCK84_DAY_TAB_E2P:
+ 349   2                  mem_write(adrAry, (INT8U*)&default_triff_day_tab, lenth,  MEM_E2P1);//block-84 ÈÕÊ±¶Î±íÊý¾Ý¿é 
+             -  //
+ 350   2              break;
+ 351   2      #endif
+ 352   2      
+ 353   2              default:
+ 354   2                  mem_fill(adrAry, lenth, 0x00, MEM_E2P1);
+ 355   2              break;
+ 356   2          }
+ 357   1      }
+ 358          
+ 359          
+ 360          /*
+ 361          //-------------------------------------------------------------------------------//
+ 362          //  Function:      void MemWrite( unsigned int dst,  char *src, int lenth, char memType )               
+ 363          //  Description:  ½«Ö¸¶¨µÄRAMÇø srcµØÖ·ÆðÊ¼µÄÊý¾ÝÐ´ÈëÓÃmemTypeÖ¸¶¨µÄÀàÐÍÆ÷¼þÊý¾ÝÇø
+ 364          //  Parameters:  char *dst : Ä¿±êÊý¾ÝÇøÊ×µØÖ·
+ 365          //                     unsigned int src: Ô´Êý¾ÝÇøÊ×µØÖ·£¬RAMÇø
+ 366          //                     int lenth  :  Êý¾Ý²Ù×÷³¤¶È
+ 367          //                     char memType  : ´æ´¢Æ÷²Ù×÷ÀàÐÍ
+ 368          //  Returns:       ÎÞ                            
+ 369          //  Others:        
+ 370          //-------------------------------------------------------------------------------//
+ 371          */
+ 372          void mem_db_check( void )
+ 373          {
+ 374   1       INT8U i;
+ 375   1       ST_U16_U08 checkNum0;
+ 376   1       ST_U16_U08 checkNum1;
+ 377   1       INT16U adr_dst;
+ 378   1       INT16U adr_csck;
+ 379   1       INT8U lenth;
+ 380   1       INT8U staus;
+ 381   1       uint8  u8_No;
+ 382   1      
+ 383   1          for(i=0;i<(sizeof(mem_table)/sizeof(E2P_CHECK_TAB));i++ )
+ 384   1          {
+ 385   2              staus = 0;
+ 386   2              adr_dst= mem_table[i].u16_adr;
+ 387   2              lenth = mem_table[i].u16_len-2;
+ 388   2              adr_csck = adr_dst + lenth; 
+ 389   2              u8_No = mem_table[i].u8_No;
+ 390   2      
+ 391   2              CLRWDT();
+ 392   2              //check main aera data  //
+ 393   2              checkNum0.u16= get_mem_ck_data(adr_dst,lenth, MEM_E2P1);
+ 394   2              mem_read(&checkNum1.B08[0], adr_csck, 2,MEM_E2P1 );
+ 395   2              if(checkNum0.u16 != checkNum1.u16)  staus |= 0x01;
+ 396   2         
+ 397   2              if(u8_No<100)     
+ 398   2              {
+ 399   3                  //check backup aera data  //
+ 400   3                  checkNum0.u16 = get_mem_ck_data(adr_dst+E2PBAK_SIZE,lenth, MEM_E2P1);
+ 401   3                  mem_read(&checkNum1.B08[0], adr_csck+E2PBAK_SIZE, 2,MEM_E2P1 );
+ 402   3                  if(checkNum0.u16 != checkNum1.u16)  staus |= 0x02;
+ 403   3              }
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 8   
+
+ 404   2                  
+ 405   2              // deal to checked  result  //
+ 406   2      //DEBUGE  //
+ 407   2      //staus=0X03;
+ 408   2      ////////
+ 409   2              CLRWDT();
+ 410   2              switch(staus)
+ 411   2              {
+ 412   3                  case 0:                // main aera data right, backup aera data right //
+ 413   3                  
+ 414   3                      break;
+ 415   3      
+ 416   3                  case 1:               // main aera data error, backup aera data right //
+ 417   3                       if(u8_No<100)
+ 418   3                      {     
+ 419   4                         mem_to_mem(adr_dst, adr_dst+E2PBAK_SIZE, lenth+2, (MEM_E2P1<<4)+MEM_E2P1);
+ 420   4                      }
+ 421   3                      else
+ 422   3                      {
+ 423   4                          get_default_mem_data(u8_No);   
+ 424   4                          checkNum0.u16= get_mem_ck_data(adr_dst,lenth, MEM_E2P1);
+ 425   4                          mem_write(adr_csck, &checkNum0.B08[0], 2, MEM_E2P1);
+ 426   4                      }
+ 427   3                      CLRWDT();
+ 428   3                      break;  
+ 429   3      
+ 430   3                  case 2:              // main aera data right, backup aera data error //
+ 431   3                         mem_to_mem(adr_dst+E2PBAK_SIZE,adr_dst, lenth+2, (MEM_E2P1<<4)+MEM_E2P1);
+ 432   3                         CLRWDT();
+ 433   3                      break;  
+ 434   3      
+ 435   3                  case 3:               // main aera data error, backup aera data error //
+ 436   3                         get_default_mem_data(u8_No);
+ 437   3                         checkNum0.u16= get_mem_ck_data(adr_dst,lenth, MEM_E2P1);
+ 438   3                         mem_write(adr_csck, &checkNum0.B08[0], 2, MEM_E2P1);
+ 439   3                                         CLRWDT();
+ 440   3                         mem_to_mem(adr_dst+E2PBAK_SIZE,adr_dst, lenth+2, (MEM_E2P1<<4)+MEM_E2P1);   
+ 441   3                      break;               
+ 442   3      
+ 443   3                  default:               
+ 444   3                         sys_err();
+ 445   3                      break;                     
+ 446   3              }
+ 447   2              CLRWDT();
+ 448   2              
+ 449   2          }
+ 450   1      
+ 451   1      }
+ 452          
+ 453          
+ 454          
+ 455          /*
+ 456          //-------------------------------------------------------------------------------//
+ 457          //  Function:      mem_db_clr           
+ 458          //  Description:  ½«ËùÓÐµÄ±¸·ÝÊý¾Ý±¸·ÝÇøÇåÁã£¬ÓÃÓÚ³õÊ¼»¯E2PÊý¾Ý
+ 459          //  Parameters:  char *dst : Ä¿±êÊý¾ÝÇøÊ×µØÖ·
+ 460          //                     unsigned int src: Ô´Êý¾ÝÇøÊ×µØÖ·£¬RAMÇø
+ 461          //                     int lenth  :  Êý¾Ý²Ù×÷³¤¶È
+ 462          //                     char memType  : ´æ´¢Æ÷²Ù×÷ÀàÐÍ
+ 463          //  Returns:       ÎÞ                            
+ 464          //  Others:        
+ 465          //-------------------------------------------------------------------------------//
+C51 COMPILER V9.01   PROC_EXMEM                                                            01/31/2019 11:34:14 PAGE 9   
+
+ 466          */
+ 467          void mem_db_clr( uint8 type )
+ 468          {
+ 469   1       INT8U i;
+ 470   1       ST_U16_U08 checkNum0;
+ 471   1       INT16U adr_dst;
+ 472   1       INT16U adr_csck;
+ 473   1       INT8U lenth;
+ 474   1       uint8  u8_No;
+ 475   1      
+ 476   1          for(i=0;i<(sizeof(mem_table)/sizeof(E2P_CHECK_TAB));i++ )
+ 477   1          {
+ 478   2              adr_dst= mem_table[i].u16_adr;
+ 479   2              lenth = mem_table[i].u16_len-2;
+ 480   2              adr_csck = adr_dst + lenth; 
+ 481   2              u8_No = mem_table[i].u8_No;
+ 482   2      
+ 483   2              if((u8_No !=No_BLOCK70_EMU_PARAM_E2P) ||(type ==0XA5))
+ 484   2              {
+ 485   3                   CLRWDT();
+ 486   3                  //check main aera data  //
+ 487   3                  checkNum0.u16= 0;
+ 488   3                  mem_write(adr_csck,&checkNum0.B08[0],  2,MEM_E2P1 );
+ 489   3             
+ 490   3                  if(u8_No<100)     
+ 491   3                  {
+ 492   4                      //check backup aera data  //
+ 493   4                      checkNum0.u16 = 0;
+ 494   4                      mem_write(adr_csck+E2PBAK_SIZE,&checkNum0.B08[0],  2,MEM_E2P1 );
+ 495   4                  }
+ 496   3              }
+ 497   2                  
+ 498   2          }
+ 499   1      
+ 500   1      }
+ 501          
+ 502          /***************************************************************
+ 503          *    END
+ 504          ****************************************************************/
+ 505          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2205    ----
+   CONSTANT SIZE    =    138    ----
+   XDATA SIZE       =   ----     470
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,667 @@
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE API_EVENT
+OBJECT MODULE PLACED IN .\Api_Event.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S3_ApiPlat\Api_Event.c LARGE WARNINGLEVEL(1) BROWSE INCDIR(..\C
+                    -_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\C_Source\
+                    -S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..\C_Source
+                    -\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Api_Event.lst) OBJECT(.\Api_Event.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name                  : Api_Event.C
+   6          **Author                : maji
+   7          **date                  : 2016-04-20 
+   8          **description   : 事件记录处理应用层相关函数程序C文件
+   9          **note                  : MERTER FOR DL06A
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2016-04-20   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          
+  19          #include <MyIncludes_H.h>
+  20          
+  21          const  EVEN_CLASSII_VAR  code   gs_even_var =
+  22          {
+  23          0,    //  even_cnt[0];
+  24          3,3,3,
+  25          0,     //  doing_flg[0];
+  26          0,0,0,
+  27          0,   // even_data[0]
+  28          0,0,0,  
+  29          0, // even_csck
+  30          };
+  31          EVEN_FUN_VAR   gs_even_fun_var;
+  32          
+  33          
+  34          /*******************************************************************************
+  35          * 全局变量定义区
+  36          *******************************************************************************/
+  37          
+  38          
+  39          /*******************************************************************************
+  40          * 常量表区
+  41          *******************************************************************************/
+  42          //  常量字符表定义 x//
+  43          const CLASS_I_TAB  code even_class_I_tab[] = {
+  44              ID_CLASS_I_PROG,         ADR_BLOCK150_EVENI_PROG_E2P,
+  45              ID_CLASS_I_resetMD,     ADR_BLOCK151_EVENI_resetMD_E2P,
+  46              ID_CLASS_I_setRtc,       ADR_BLOCK152_EVENI_setRtc_E2P,
+  47              
+  48                  // 2类数据//
+  49                    
+  50                    ID_CLASS_II_PWN,            ADR_BLOCK161_EVENII_PWN_E2P, 
+  51                    ID_CLASS_II_lowbattery,    ADR_BLOCK162_EVENII_lowbattery_E2P,
+  52                    ID_CLASS_II_COVER,         ADR_BLOCK163_EVENII_COVER_E2P,
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 2   
+
+  53              ID_CLASS_II_L1reverse,     ADR_BLOCK164_EVENII_L1reverse_E2P,  //L1反向事件 //      
+  54          };
+  55          
+  56          
+  57          /*****************************************************************************
+  58          ** Function name    :api_measure_deal_pre_second
+  59          **
+  60          ** Description         :每秒调用的事件记录扫描//
+  61          **
+  62          ** Parameters         :NONE          
+  63          **
+  64          ** Returned value   :NONE
+  65          **
+  66          **----------------------------------------------------------------------------
+  67          ** V01.01  MJ  2016-04-23
+  68          ******************************************************************************/
+  69          
+  70          INT8U api_even_Detect_lowbattery(void)
+  71          {
+  72   1       if(gs_measure_status_judge_var.u8_status & VBAT_LOW)
+  73   1         return TRUE;
+  74   1      
+  75   1        else   return FALSE ;
+  76   1      }
+  77          
+  78          
+  79          /*****************************************************************************
+  80          ** Function name    :api_measure_deal_pre_second
+  81          **
+  82          ** Description         :每秒调用的事件记录扫描//
+  83          **
+  84          ** Parameters         :NONE          
+  85          **
+  86          ** Returned value   :NONE
+  87          **
+  88          **----------------------------------------------------------------------------
+  89          ** V01.01  MJ  2016-04-23
+  90          ******************************************************************************/
+  91          
+  92          INT8U  api_even_Detect_L1reverse(void)
+  93          {
+  94   1      
+  95   1              if(gs_measure_status_judge_var.u8_status&REV_ACPOWER_L)
+  96   1                      return TRUE;
+  97   1              else   
+  98   1                      return FALSE ;
+  99   1      }
+ 100          
+ 101          
+ 102          /*****************************************************************************
+ 103          ** Function name    :api_measure_deal_pre_second
+ 104          **
+ 105          ** Description         :每秒调用的事件记录扫描//
+ 106          **
+ 107          ** Parameters         :NONE          
+ 108          **
+ 109          ** Returned value   :NONE
+ 110          **
+ 111          **----------------------------------------------------------------------------
+ 112          ** V01.01  MJ  2016-04-23
+ 113          ******************************************************************************/
+ 114          void api_even_Detect_sec(void)
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 3   
+
+ 115          {
+ 116   1           if(CheckPOWERUP()!=TRUE) return;    
+ 117   1      
+ 118   1      //    api_even_ee_err(); // E2错误扫描..
+ 119   1      //      
+ 120   1              if(api_even_Detect_lowbattery()==TRUE)api_deal_even_class_recode(ID_CLASS_II_lowbattery,START);
+ 121   1              else  api_deal_even_class_recode(ID_CLASS_II_lowbattery,END);
+ 122   1      
+ 123   1      //      if(api_even_Detect_NOL1()==TRUE)api_deal_even_class_recode(ID_CLASS_II_NOL1,START);
+ 124   1      //      else  api_deal_even_class_recode(ID_CLASS_II_NOL1,END);
+ 125   1      
+ 126   1      //      if(api_even_Detect_NOL2()==TRUE)api_deal_even_class_recode(ID_CLASS_II_NOL2,START);
+ 127   1      //      else  api_deal_even_class_recode(ID_CLASS_II_NOL2,END);
+ 128   1      
+ 129   1      
+ 130   1              //反向只做合相功率反向事件 ID 使用L1断相
+ 131   1              if(api_even_Detect_L1reverse()==TRUE)api_deal_even_class_recode(ID_CLASS_II_L1reverse,START);
+ 132   1              else  api_deal_even_class_recode(ID_CLASS_II_L1reverse,END);
+ 133   1      
+ 134   1      //      if(api_even_Detect_L2reverse()==TRUE)api_deal_even_class_recode(ID_CLASS_II_L2reverse,START);
+ 135   1      //      else  api_deal_even_class_recode(ID_CLASS_II_L2reverse,END);
+ 136   1        if(Judge_ERR_COVER_key()==TRUE)api_deal_even_class_recode(ID_CLASS_II_COVER,START);
+ 137   1        else api_deal_even_class_recode(ID_CLASS_II_COVER,END);
+ 138   1      //   Proc_Check_COVER_Pre_sec();
+ 139   1      }
+ 140          
+ 141          
+ 142          /*****************************************************************************
+ 143          ** Function name    :api_measure_deal_pre_second
+ 144          **
+ 145          ** Description         :每秒调用的测量函数
+ 146          **
+ 147          ** Parameters         :NONE          
+ 148          **
+ 149          ** Returned value   :NONE
+ 150          **
+ 151          **----------------------------------------------------------------------------
+ 152          ** V01.01  MJ  2016-04-23
+ 153          ******************************************************************************/
+ 154          void api_deal_even_class_recode(uint8 even_id, uint8 type )
+ 155          {
+ 156   1          uint8 i,ID;
+ 157   1          CLASS_I_TAB  tab_class;
+ 158   1      
+ 159   1          if(even_id < ID_CLASS_I_max ) 
+ 160   1          {
+ 161   2          for(i=0;i< ID_CLASS_I_max ; i++)
+ 162   2          {
+ 163   3              if(even_id==even_class_I_tab[i].id_even)  break;
+ 164   3          }
+ 165   2      
+ 166   2          if(i>=ID_CLASS_I_max)   return;
+ 167   2      
+ 168   2          tab_class.addr_even = even_class_I_tab[i].addr_even;
+ 169   2          ID = even_id ;        // 一类事件ID  0-6
+ 170   2          }
+ 171   1        else if( (even_id >= ID_CLASS_II_min)&&(even_id < ID_CLASS_II_max))   
+ 172   1              {
+ 173   2      
+ 174   2                for(i=0;i< len_CLASSII_cnt ; i++)
+ 175   2                {
+ 176   3                    if(even_id==even_class_I_tab[ID_CLASS_I_max+i].id_even)  break;
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 4   
+
+ 177   3                }
+ 178   2            
+ 179   2                if(i>= len_CLASSII_cnt)   return;
+ 180   2            
+ 181   2                tab_class.addr_even = even_class_I_tab[ID_CLASS_I_max+i].addr_even;
+ 182   2                 ID = i;              //  二类事件ID    0 - 6
+ 183   2              } 
+ 184   1        else   return;
+ 185   1      
+ 186   1        
+ 187   1          lnk_save_even_class1_recode(ID,tab_class.addr_even,type);
+ 188   1          
+ 189   1      }
+ 190          
+ 191          void api_pwl_cover_even_class_recode(uint8 even_id, uint8 type )
+ 192          {       
+ 193   1              CLASS_II_UNIT  data_class2;
+ 194   1              INT8U buftmp[22];
+ 195   1              ST_U32_U08 Time;
+ 196   1              uint8 i ;       
+ 197   1              if(type == START)  
+ 198   1              {   
+ 199   2                      if((0x5a != gs_even_fun_var.even_fun_doingflg[even_id])&& (gs_even_fun_var.into_cnt[even_id]>2)) // 未开
+             -始
+ 200   2                      {
+ 201   3                              gs_even_fun_var.even_fun_doingflg[even_id] = 0x5a;
+ 202   3                              mem_db_write(ADR_CLASS2FLG_START_E2P+ even_id* LEN_CLASSII_flg,&gs_even_fun_var.even_fun_doingflg[even_
+             -id],LEN_CLASSII_flg,MEM_E2P1 );
+ 203   3                      }
+ 204   2                      else 
+ 205   2                      {
+ 206   3                              gs_even_fun_var.esc_cnt[even_id] =0;            
+ 207   3                              if((gs_even_fun_var.into_cnt[even_id]<3)) gs_even_fun_var.into_cnt[even_id] += 1; //    if((0x5a ==gs_even
+             -_fun_var.even_fun_doingflg[even_id])&& 
+ 208   3                              return;
+ 209   3                      }
+ 210   2                      mem_read(&data_class2.u16_num.B08[0], ADR_BLOCK163_EVENII_COVER_E2P, LEN_CLASS_II_UNIT, MEM_E2P1);  
+ 211   2                      //移动数据 //
+ 212   2                      //次数超出不再更新//
+ 213   2                      if(data_class2.u16_num.u16<65535)  data_class2.u16_num.u16++;
+ 214   2                      for(i=9;i>0;i--)//  开始时间
+ 215   2                      {
+ 216   3                              Lib_Copy_Str_TwoArry(&data_class2.StartTm[i][0], &data_class2.StartTm[i-1][0], 6);//开始时间滚存
+ 217   3                      }
+ 218   2                      data_class2.StartTm[0][0] = gs_CurDateTime.Year;
+ 219   2                      data_class2.StartTm[0][1] = gs_CurDateTime.Month;
+ 220   2                      data_class2.StartTm[0][2] = gs_CurDateTime.Day;
+ 221   2                      data_class2.StartTm[0][3] = gs_CurDateTime.Hour;
+ 222   2                      data_class2.StartTm[0][4] = gs_CurDateTime.Minute;
+ 223   2                      data_class2.StartTm[0][5] = gs_CurDateTime.Second;
+ 224   2                  //结束时间滚存
+ 225   2                  for(i=9;i>0;i--)
+ 226   2                      {
+ 227   3                              Lib_Copy_Str_TwoArry(&data_class2.EndTm[i][0], &data_class2.EndTm[i-1][0], 6);//开始时间滚存
+ 228   3                      }
+ 229   2                      CLRWDT();     
+ 230   2                  //结束时间清零//
+ 231   2                      Lib_Set_String(&data_class2.EndTm[0][0],0x00, 6 );// 结束时间清零       
+ 232   2                  //获取校验和 //
+ 233   2                      data_class2.u16_csck = Lib_get_csck_int16u_num(&data_class2.u16_num.B08[0],LEN_CLASS_II_UNIT-2,CHECKWORD
+             -);
+ 234   2                      //数据保存 //
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 5   
+
+ 235   2                      mem_write(ADR_BLOCK163_EVENII_COVER_E2P, &data_class2.u16_num.B08[0], LEN_CLASS_II_UNIT, MEM_E2P1);
+ 236   2        }
+ 237   1              else 
+ 238   1              {  
+ 239   2                      if( 0x5a !=gs_even_fun_var.even_fun_doingflg[even_id])  // 未开始
+ 240   2                      {
+ 241   3                        return;  //已经结束
+ 242   3                      } 
+ 243   2              if(gs_even_fun_var.esc_cnt[even_id] < 3) 
+ 244   2                      {
+ 245   3                              gs_even_fun_var.into_cnt[even_id] =0;                   
+ 246   3                              gs_even_fun_var.esc_cnt[even_id]++;             // 写结束标识//
+ 247   3      
+ 248   3                      }       
+ 249   2                      else 
+ 250   2                      {
+ 251   3                              gs_even_fun_var.even_fun_doingflg[even_id] = 0;
+ 252   3                              mem_db_write(ADR_CLASS2FLG_START_E2P+ even_id* LEN_CLASSII_flg,&gs_even_fun_var.even_fun_doingflg[even_
+             -id],LEN_CLASSII_flg,MEM_E2P1 );
+ 253   3                              CLRWDT();     
+ 254   3                              mem_read(&data_class2.u16_num.B08[0], ADR_BLOCK163_EVENII_COVER_E2P, LEN_CLASS_II_UNIT, MEM_E2P1);  
+ 255   3                              //移动数据 //
+ 256   3                              data_class2.EndTm[0][0] = gs_CurDateTime.Year;
+ 257   3                              data_class2.EndTm[0][1] = gs_CurDateTime.Month;
+ 258   3                              data_class2.EndTm[0][2] = gs_CurDateTime.Day;
+ 259   3                              data_class2.EndTm[0][3] = gs_CurDateTime.Hour;
+ 260   3                              data_class2.EndTm[0][4] = gs_CurDateTime.Minute;
+ 261   3                              data_class2.EndTm[0][5] = gs_CurDateTime.Second;
+ 262   3                              //开始时间转移
+ 263   3                              buftmp[10] = data_class2.StartTm[0][5];  // 秒
+ 264   3                              buftmp[11] = data_class2.StartTm[0][4];
+ 265   3                              buftmp[12] = data_class2.StartTm[0][3];
+ 266   3                              buftmp[13] = data_class2.StartTm[0][2];
+ 267   3                              buftmp[14] = data_class2.StartTm[0][1];
+ 268   3                              buftmp[15] = data_class2.StartTm[0][0]; //年
+ 269   3                              //结束时间转移
+ 270   3                              buftmp[16] = data_class2.EndTm[0][5];// 秒
+ 271   3                              buftmp[17] = data_class2.EndTm[0][4];
+ 272   3                              buftmp[18] = data_class2.EndTm[0][3];
+ 273   3                              buftmp[19] = data_class2.EndTm[0][2];
+ 274   3                              buftmp[20] = data_class2.EndTm[0][1];
+ 275   3                              buftmp[21] = data_class2.EndTm[0][0];// 年
+ 276   3                              //计算秒数//
+ 277   3                              GetTotalTime(&buftmp[0]);
+ 278   3                              //秒数累加//
+ 279   3                              Lib_Copy_Str_TwoArry(&Time.B08[0], &buftmp[4], 4);//开始时间滚存
+ 280   3                              //持续时间累加，超出不清零//
+ 281   3                              if(0xFFFFFFFF-data_class2.accumTime.u32>Time.u32)  data_class2.accumTime.u32 += Time.u32;
+ 282   3                              //获取校验和 //
+ 283   3                              data_class2.u16_csck = Lib_get_csck_int16u_num(&data_class2.u16_num.B08[0],LEN_CLASS_II_UNIT-2,CHECKWOR
+             -D);
+ 284   3                              CLRWDT();     
+ 285   3                              //数据保存 //
+ 286   3                              mem_write(ADR_BLOCK163_EVENII_COVER_E2P, &data_class2.u16_num.B08[0], LEN_CLASS_II_UNIT, MEM_E2P1);
+ 287   3                              gs_even_fun_var.esc_cnt[even_id] =0; 
+ 288   3                              gs_even_fun_var.into_cnt[even_id] =0;
+ 289   3                      }               
+ 290   2              }       
+ 291   1      }
+ 292          
+ 293          
+ 294          /*****************************************************************************
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 6   
+
+ 295          ** Function name    :api_measure_deal_pre_second
+ 296          **
+ 297          ** Description         :每秒调用的测量函数
+ 298          **
+ 299          ** Parameters         :NONE   adr 卷页地址 
+ 300          **
+ 301          ** Returned value   :NONE   type 发生类型   1 开始  0x55  进行时候  0xFF 结束   
+ 302          **                                      ID   只有二类时间有效，前期处理 0 - 6
+ 303          **----------------------------------------------------------------------------
+ 304          ** V01.01  MJ  2016-04-23
+ 305          ******************************************************************************/
+ 306          void lnk_save_even_class1_recode(uint8 ID, uint16 adr , uint8 type)
+ 307          {
+ 308   1          CLASS_I_UNIT   data_class1;
+ 309   1          CLASS_II_UNIT  data_class2;
+ 310   1          INT8U buftmp[22];
+ 311   1          ST_U32_U08 Time;
+ 312   1          uint8 i ;
+ 313   1      
+ 314   1              
+ 315   1          if(adr < ADR_BLOCK_min_EVENI_E2P)  return;
+ 316   1              
+ 317   1          if(adr <=ADR_BLOCK_max_EVENI_E2P)
+ 318   1          {
+ 319   2              // 一类事件处理 // 
+ 320   2          mem_read(&data_class1.u16_num.B08[0], adr, LEN_CLASS_I_UNIT, MEM_E2P1);  
+ 321   2          //移动数据 //
+ 322   2          if(data_class1.u16_num.u16<65535) data_class1.u16_num.u16++;
+ 323   2          for(i=9;i>0;i--)
+ 324   2          {
+ 325   3              Lib_Copy_Str_TwoArry(&data_class1.dataTime[i][0], &data_class1.dataTime[i-1][0], 6);
+ 326   3          }
+ 327   2              
+ 328   2          data_class1.dataTime[0][0]=gs_CurDateTime.Year;
+ 329   2          data_class1.dataTime[0][1]=gs_CurDateTime.Month;
+ 330   2          data_class1.dataTime[0][2]=gs_CurDateTime.Day;
+ 331   2          data_class1.dataTime[0][3]=gs_CurDateTime.Hour;
+ 332   2          data_class1.dataTime[0][4]=gs_CurDateTime.Minute;
+ 333   2          data_class1.dataTime[0][5]=gs_CurDateTime.Second;
+ 334   2          //获取校验和 //
+ 335   2          data_class1.u16_csck = Lib_get_csck_int16u_num(&data_class1.u16_num.B08[0],LEN_CLASS_I_UNIT-2,CHECKWOR
+             -D);
+ 336   2      
+ 337   2          //数据保存 //
+ 338   2          mem_write(adr, &data_class1.u16_num.B08[0], LEN_CLASS_I_UNIT, MEM_E2P1);
+ 339   2          return ;
+ 340   2          }
+ 341   1      
+ 342   1              //  二类事件发生处理// 
+ 343   1          if((adr >=ADR_BLOCK_min_EVENII_E2P) && (adr <=ADR_BLOCK_max_EVENII_E2P))
+ 344   1          {
+ 345   2            if(type == START)  
+ 346   2            {
+ 347   3              gs_even_fun_var.esc_cnt[ID]=0;  // 事件保持时间
+ 348   3              //  读取延时时间参数更新里读取//
+ 349   3      //                  if(gs_sys_globaL_var.work_mode != SLEEP_MODE)
+ 350   3                                mem_read(&gs_even_var.even_cnt[ID],ADR_CLASS2CNT_START_E2P+ ID* LEN_CLASSII_cnt,LEN_CLASSII_cnt,MEM_E
+             -2P1);
+ 351   3                          if((gs_even_fun_var.into_cnt[ID]< gs_even_var.even_cnt[ID]))//&&(gs_sys_globaL_var.work_mode != SLEE
+             -P_MODE)
+ 352   3                          {
+ 353   4                        gs_even_fun_var.into_cnt[ID]++;  // 事件保持时间
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 7   
+
+ 354   4                          }
+ 355   3                          else 
+ 356   3                    {
+ 357   4               gs_even_fun_var.into_cnt[ID]+=gs_even_var.even_cnt[ID];  // 事件保持时间
+ 358   4                                 mem_read(&gs_even_fun_var.even_fun_doingflg[ID],ADR_CLASS2FLG_START_E2P+ ID* LEN_CLASSII_flg,LEN_CLA
+             -SSII_flg,MEM_E2P1);
+ 359   4                                 CLRWDT();     
+ 360   4             if( ID ==1 ) 
+ 361   4                                       CLRWDT(); 
+ 362   4                               if(0x5a!=gs_even_fun_var.even_fun_doingflg[ID])  // 未开始
+ 363   4                            {
+ 364   5                                      gs_even_fun_var.even_fun_doingflg[ID] = 0x5a;
+ 365   5                                  mem_db_write(ADR_CLASS2FLG_START_E2P+ ID* LEN_CLASSII_flg,&gs_even_fun_var.even_fun_doingflg[ID],L
+             -EN_CLASSII_flg,MEM_E2P1 );
+ 366   5                                }
+ 367   4                         else 
+ 368   4                       return;  // 处于发生状态
+ 369   4      
+ 370   4                              mem_read(&data_class2.u16_num.B08[0], adr, LEN_CLASS_II_UNIT, MEM_E2P1);  
+ 371   4                              //移动数据 //
+ 372   4                              //次数超出不再更新//
+ 373   4                              if(data_class2.u16_num.u16<65535)  data_class2.u16_num.u16++;
+ 374   4                              for(i=9;i>0;i--)//  开始时间
+ 375   4                              {
+ 376   5                              Lib_Copy_Str_TwoArry(&data_class2.StartTm[i][0], &data_class2.StartTm[i-1][0], 6);//开始时间滚存
+ 377   5                              }
+ 378   4                              data_class2.StartTm[0][0] = gs_CurDateTime.Year;
+ 379   4                              data_class2.StartTm[0][1] = gs_CurDateTime.Month;
+ 380   4                              data_class2.StartTm[0][2] = gs_CurDateTime.Day;
+ 381   4                              data_class2.StartTm[0][3] = gs_CurDateTime.Hour;
+ 382   4                              data_class2.StartTm[0][4] = gs_CurDateTime.Minute;
+ 383   4                              data_class2.StartTm[0][5] = gs_CurDateTime.Second;
+ 384   4                           //结束时间滚存
+ 385   4                  for(i=9;i>0;i--)
+ 386   4                              {
+ 387   5                              Lib_Copy_Str_TwoArry(&data_class2.EndTm[i][0], &data_class2.EndTm[i-1][0], 6);//开始时间滚存
+ 388   5                              }
+ 389   4                          CLRWDT();     
+ 390   4      
+ 391   4                  //结束时间清零//
+ 392   4                              Lib_Set_String(&data_class2.EndTm[0][0],0x00, 6 );// 结束时间清零       
+ 393   4      
+ 394   4      
+ 395   4                              //获取校验和 //
+ 396   4                              data_class2.u16_csck = Lib_get_csck_int16u_num(&data_class2.u16_num.B08[0],LEN_CLASS_II_UNIT-2,CHECKWOR
+             -D);
+ 397   4      
+ 398   4                              //数据保存 //
+ 399   4                              mem_write(adr, &data_class2.u16_num.B08[0], LEN_CLASS_II_UNIT, MEM_E2P1);
+ 400   4                        }
+ 401   3                      }
+ 402   2                 else
+ 403   2                  {
+ 404   3                        if(gs_even_fun_var.into_cnt[ID] > gs_even_var.even_cnt[ID])
+ 405   3                        {
+ 406   4                         if(gs_even_fun_var.esc_cnt[ID] < gs_even_var.even_cnt[ID])   gs_even_fun_var.esc_cnt[ID]++;
+ 407   4                         else 
+ 408   4                         {
+ 409   5                             gs_even_fun_var.esc_cnt[ID] =0;
+ 410   5                              gs_even_fun_var.into_cnt[ID] =0;
+ 411   5                            //  读取2类数据状态//
+ 412   5                            // gs_even_fun_var.into_cnt[ID]+=gs_even_var.even_cnt[ID];  // 事件保持时间
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 8   
+
+ 413   5                              mem_read(&gs_even_fun_var.even_fun_doingflg[ID],ADR_CLASS2FLG_START_E2P+ ID* LEN_CLASSII_flg,LEN_CLASSI
+             -I_flg,MEM_E2P1);
+ 414   5                           if( 0 ==gs_even_fun_var.even_fun_doingflg[ID])  // 未开始
+ 415   5                            {
+ 416   6                                return;  //已经结束
+ 417   6                            }
+ 418   5      
+ 419   5                          // 写结束标识//
+ 420   5                              gs_even_fun_var.even_fun_doingflg[ID] = 0;
+ 421   5                              mem_db_write(ADR_CLASS2FLG_START_E2P+ ID* LEN_CLASSII_flg,&gs_even_fun_var.even_fun_doingflg[ID],LEN_CL
+             -ASSII_flg,MEM_E2P1 );
+ 422   5                              CLRWDT();     
+ 423   5                               mem_read(&data_class2.u16_num.B08[0], adr, LEN_CLASS_II_UNIT, MEM_E2P1);  
+ 424   5                              //移动数据 //
+ 425   5                              data_class2.EndTm[0][0] = gs_CurDateTime.Year;
+ 426   5                              data_class2.EndTm[0][1] = gs_CurDateTime.Month;
+ 427   5                              data_class2.EndTm[0][2] = gs_CurDateTime.Day;
+ 428   5                              data_class2.EndTm[0][3] = gs_CurDateTime.Hour;
+ 429   5                              data_class2.EndTm[0][4] = gs_CurDateTime.Minute;
+ 430   5                              data_class2.EndTm[0][5] = gs_CurDateTime.Second;
+ 431   5                      //开始时间转移
+ 432   5                              buftmp[10] = data_class2.StartTm[0][5];  // 秒
+ 433   5                              buftmp[11] = data_class2.StartTm[0][4];
+ 434   5                              buftmp[12] = data_class2.StartTm[0][3];
+ 435   5                              buftmp[13] = data_class2.StartTm[0][2];
+ 436   5                              buftmp[14] = data_class2.StartTm[0][1];
+ 437   5                              buftmp[15] = data_class2.StartTm[0][0]; //年
+ 438   5      
+ 439   5                              //结束时间转移
+ 440   5                              buftmp[16] = data_class2.EndTm[0][5];// 秒
+ 441   5                              buftmp[17] = data_class2.EndTm[0][4];
+ 442   5                              buftmp[18] = data_class2.EndTm[0][3];
+ 443   5                              buftmp[19] = data_class2.EndTm[0][2];
+ 444   5                              buftmp[20] = data_class2.EndTm[0][1];
+ 445   5                              buftmp[21] = data_class2.EndTm[0][0];// 年
+ 446   5                              //计算秒数//
+ 447   5                              GetTotalTime(&buftmp[0]);
+ 448   5                              //秒数累加//
+ 449   5                              Lib_Copy_Str_TwoArry(&Time.B08[0], &buftmp[4], 4);//开始时间滚存
+ 450   5                          //持续时间累加，超出不清零//
+ 451   5                              if(0xFFFFFFFF-data_class2.accumTime.u32>Time.u32)  data_class2.accumTime.u32 += Time.u32;
+ 452   5                              //获取校验和 //
+ 453   5                              data_class2.u16_csck = Lib_get_csck_int16u_num(&data_class2.u16_num.B08[0],LEN_CLASS_II_UNIT-2,CHECKWOR
+             -D);
+ 454   5      
+ 455   5                          CLRWDT();     
+ 456   5      
+ 457   5                              //数据保存 //
+ 458   5                              mem_write(adr, &data_class2.u16_num.B08[0], LEN_CLASS_II_UNIT, MEM_E2P1);
+ 459   5      
+ 460   5                        }
+ 461   4                        }
+ 462   3                      else 
+ 463   3                      {
+ 464   4                              gs_even_fun_var.esc_cnt[ID] =0;
+ 465   4                              gs_even_fun_var.into_cnt[ID] =0;
+ 466   4                      }
+ 467   3              }
+ 468   2      
+ 469   2      }
+ 470   1              else  return;   // 不存在事件
+ 471   1      
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 9   
+
+ 472   1      }
+ 473          
+ 474          
+ 475          /*****************************************************************************
+ 476          ** Function name    :api_measure_deal_pre_second
+ 477          **
+ 478          ** Description         :每秒调用的测量函数
+ 479          **
+ 480          ** Parameters         :NONE          
+ 481          **
+ 482          ** Returned value   :NONE
+ 483          **
+ 484          **----------------------------------------------------------------------------
+ 485          ** V01.01  MJ  2016-04-23
+ 486          ******************************************************************************/
+ 487          void api_deal_even_class1_recode(uint8 even_id, uint8 type)
+ 488          {
+ 489   1          uint8 i,ID;
+ 490   1      
+ 491   1          CLASS_I_TAB  tab_class;
+ 492   1      
+ 493   1      //    for(i=0;i<(dim(even_class_I_tab)); i++)
+ 494   1      //    {
+ 495   1      //        if(even_id==even_class_I_tab[i].id_even)  break;
+ 496   1      //    }
+ 497   1      //    
+ 498   1      //    if(i>=(dim(even_class_I_tab)))   return;
+ 499   1              if(even_id < ID_CLASS_I_max ) //判为1类事件
+ 500   1          {
+ 501   2                      for(i=0;i< ID_CLASS_I_max ; i++)
+ 502   2                      {
+ 503   3                              if(even_id==even_class_I_tab[i].id_even)  break;
+ 504   3                      }
+ 505   2                      
+ 506   2                      if(i>=ID_CLASS_I_max)   return;
+ 507   2                      
+ 508   2                      tab_class.addr_even = even_class_I_tab[i].addr_even;
+ 509   2                      ID = even_id ;        // 一类事件ID  
+ 510   2              }
+ 511   1              else if( (even_id >= ID_CLASS_II_min)&&(even_id < ID_CLASS_II_max))     //判别为2类事件
+ 512   1              {
+ 513   2                      for(i=0;i< len_CLASSII_cnt ; i++)
+ 514   2                      {
+ 515   3                              if(even_id==even_class_I_tab[ID_CLASS_I_max+i].id_even)  break;
+ 516   3                      }
+ 517   2                      if(i>= len_CLASSII_cnt)   return;
+ 518   2                      tab_class.addr_even = even_class_I_tab[ID_CLASS_I_max+i].addr_even;
+ 519   2                      ID = i;              //  二类事件ID    0 - 6
+ 520   2              } 
+ 521   1              else   return;
+ 522   1      
+ 523   1      //    tab_class1.addr_even = even_class_I_tab[i].addr_even;
+ 524   1      
+ 525   1          lnk_save_even_class1_recode(ID,tab_class.addr_even,type);
+ 526   1          
+ 527   1      }
+ 528          
+ 529          
+ 530          
+ 531          /*****************************************************************************
+ 532          ** Function name    :api_measure_deal_pre_second
+ 533          **
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 10  
+
+ 534          ** Description         :每秒调用的测量函数
+ 535          **
+ 536          ** Parameters         :NONE          
+ 537          **
+ 538          ** Returned value   :NONE
+ 539          **
+ 540          **----------------------------------------------------------------------------
+ 541          ** V01.01  MJ  2016-04-23
+ 542          ******************************************************************************/
+ 543          void api_clr_even_by_comm(void)
+ 544          {
+ 545   1         uint8 i;
+ 546   1          CLASS_I_UNIT   data_class1;
+ 547   1          CLASS_II_UNIT  data_class2;
+ 548   1      
+ 549   1          Lib_Set_String(&data_class1.u16_num.B08[0], 0, LEN_CLASS_I_UNIT);
+ 550   1          Lib_Set_String(&data_class2.u16_num.B08[0], 0, LEN_CLASS_II_UNIT);
+ 551   1      //    gs_sys_globaL_var.sys_e2_err_flg=0;
+ 552   1           Lib_Set_String(&gs_even_fun_var.esc_cnt,0,sizeof(EVEN_FUN_VAR));
+ 553   1      
+ 554   1           mem_db_write(ADR_CLASS2FLG_START_E2P ,&gs_even_fun_var.even_fun_doingflg[0],len_CLASSII_cnt,MEM_E2P1 
+             -);   
+ 555   1      
+ 556   1          data_class1.u16_csck = Lib_get_csck_int16u_num(&data_class1.u16_num.B08[0],LEN_CLASS_I_UNIT-2,CHECKWOR
+             -D);
+ 557   1          data_class2.u16_csck = Lib_get_csck_int16u_num(&data_class2.u16_num.B08[0],LEN_CLASS_II_UNIT-2,CHECKWO
+             -RD);
+ 558   1              
+ 559   1          for(i=0;i<(dim(even_class_I_tab)); i++)
+ 560   1          {
+ 561   2             CLRWDT();
+ 562   2              if(i<ID_CLASS_I_max) mem_write(even_class_I_tab[i].addr_even, &data_class1.u16_num.B08[0], LEN_CLASS_I_UN
+             -IT, MEM_E2P1);
+ 563   2              else mem_write(even_class_I_tab[i].addr_even, &data_class2.u16_num.B08[0], LEN_CLASS_II_UNIT, MEM_E2P1);
+ 564   2             CLRWDT();
+ 565   2          }
+ 566   1          
+ 567   1      }
+ 568          
+ 569          void GetTotalTime(INT8U *buftmp) 
+ 570          {
+ 571   1          union Union_DWordDef temp1,temp2;
+ 572   1          //开始和结束的月日都不可能为0
+ 573   1          if( (buftmp[13] == 0) || (buftmp[14] == 0) || (buftmp[19] == 0) || (buftmp[20] == 0) )
+ 574   1          {
+ 575   2              temp2.UDWORD= 0;
+ 576   2              temp1.UDWORD = 0;
+ 577   2          }  
+ 578   1          else   
+ 579   1          {
+ 580   2              temp2.UDWORD = Lib_GetGmSec( &buftmp[10] );//开始时间的秒数
+ 581   2              temp1.UDWORD = Lib_GetGmSec( &buftmp[16] );//结束时间的秒数
+ 582   2              /////夏时制判断////////////////////////////////////////////////////////////
+ 583   2                      //
+ 584   2              /////////////////////////////////////////////////////////////////////////////
+ 585   2          }
+ 586   1              //得到此次的累计时间，放到temp1                 
+ 587   1          if( temp1.UDWORD > temp2.UDWORD )
+ 588   1          {
+ 589   2              temp1.UDWORD -= temp2.UDWORD;
+ 590   2          }
+ 591   1          else
+C51 COMPILER V9.01   API_EVENT                                                             01/31/2019 11:34:26 PAGE 11  
+
+ 592   1          {
+ 593   2              temp1.UDWORD = 0;
+ 594   2          }
+ 595   1              
+ 596   1              Lib_Copy_Str_TwoArry(&buftmp[4], &temp1.BYTE[0], 4 );
+ 597   1      }
+ 598          
+ 599          /***************************************************************
+ 600          *    END
+ 601          ****************************************************************/
+ 602          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3623    ----
+   CONSTANT SIZE    =     47    ----
+   XDATA SIZE       =     12     593
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

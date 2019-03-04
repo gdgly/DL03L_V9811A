@@ -1,0 +1,316 @@
+C51 COMPILER V9.01   DRV_ADC                                                               01/31/2019 11:34:19 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE DRV_ADC
+OBJECT MODULE PLACED IN .\Drv_ADC.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S1_HardDrv\V9811A_MCU\Drv_ADC.c LARGE WARNINGLEVEL(1) BROWSE IN
+                    -CDIR(..\C_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\
+                    -C_Source\S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..
+                    -\C_Source\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Drv_ADC.lst) OBJECT(.\Drv_ADC.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name                  : Drv_ADC.c
+   6          **Author                : maji
+   7          **date                  : 2016-04-20 
+   8          **description   : ADC模块的硬件驱动C代码
+   9          **note                  : V9811A ，
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2016-04-26   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          #include <MyIncludes_H.h>
+  19          
+  20          //RTC温度曲线K系数
+  21          code INT8U InitParaRTC[64]=
+  22          {
+  23              0x03,0xE5,  //0.997 
+  24              0x03,0xE8, // 1.000 
+  25              0x03,0xEC, // 1.004 
+  26              0x03,0xEF,// 1.007 
+  27              0x03,0xD9,  //0.985 
+  28              0x03,0xDC,  //0.988 
+  29              0x03,0xE0,  //0.992 
+  30              0x03,0xE3,  //0.995 
+  31              0x03,0xD3,  //0.979 
+  32              0x03,0xD6,  //0.982 
+  33              0x03,0xD9,  //0.985 
+  34              0x03,0xDC,  //0.988 
+  35              0x03,0xC6,  //0.966 
+  36              0x03,0xC9,  //0.969 
+  37              0x03,0xCC,  //0.972 
+  38              0x03,0xCF,  //0.975 
+  39              0x04,0x10,  // 1.040 
+  40              0x04,0x13,  // 1.043 
+  41              0x04,0x16,  // 1.046 
+  42              0x04,0x19,  // 1.049 
+  43              0x04,0x03,  // 1.027 
+  44              0x04,0x07,  //      //1.031 
+  45              0x04,0x0A,  //      //1.034 
+  46              0x04,0x0D,  //      //1.037 
+  47              0x03,0xFA,  //      //1.018 
+  48              0x03,0xFD,  //      //1.021 
+  49              0x04,0x00,  //      //1.024 
+  50              0x04,0x03,  //      //1.027 
+  51              0x03,0xED, //       //1.005 
+  52              0x03,0xF1, //       //1.009 
+C51 COMPILER V9.01   DRV_ADC                                                               01/31/2019 11:34:19 PAGE 2   
+
+  53              0x03,0xF4, //       //1.012 
+  54              0x03,0xF7, //       //1.015 
+  55          };
+  56          
+  57          
+  58          /*******************************************************************************************
+  59          ** 函数名称: Enable_M_ADC
+  60          ** 函数描述: 开通M通道指定的 测量功能
+  61          ** 输入参数: uint8  m_ch  [M_ADC_CH1_TEMPERATURE ,  M_ADC_CH2_VBAT]
+  62          ** 输出参数: 无 
+  63          ** 说明    : 开通后10ms延时后才可以获取数据
+  64          *******************************************************************************************/
+  65          void Enable_M_ADC(uint8  m_ch)
+  66          {
+  67   1      INT32U ctmp;
+  68   1       
+  69   1      
+  70   1          if(m_ch == M_ADC_CH1_TEMPERATURE)   
+  71   1          {
+  72   2              CtrlADC5 = (BIT7+BIT0);  //CH1- 测温度通道,此处为M通道专用控制器，采用直接赋值方式  //           
+  73   2          } 
+  74   1          else  if(m_ch == M_ADC_CH2_VBAT)   
+  75   1          {
+  76   2              CtrlADC5 = (BIT7+BIT5+BIT1);  // CH2- 测VBAT通道, 此处为M通道专用控制器，采用直接赋值方式  //     
+             -       
+  77   2          }
+  78   1          else
+  79   1          {
+  80   2              return;
+  81   2          }  
+  82   1      
+  83   1          CtrlADC6 |= BIT3;             //BIT3 =1  开启M通道ADC   ，此处为多处复用控制器，采用或方式赋值 //
+  84   1          CtrlM |= BIT0;
+  85   1      
+  86   1          ctmp = ReadMeterParaACK(PMCtrl1);
+  87   1          ctmp |= (BIT3+BIT4);                //BIT3 =1使能M通道数字信号输入； BIT4 =1使能M通道数字信号处理 //
+  88   1          SetMeterCfgACK( ctmp,PMCtrl1);    
+  89   1      
+  90   1      }
+  91          
+  92          /*******************************************************************************************
+  93          ** 函数名称: Disable_M_ADC
+  94          ** 函数描述: 关闭M通道ADC功能
+  95          ** 输入参数: 无
+  96          ** 输出参数: 无 
+  97          ** 说明    : 为了降低电池在检测时的功耗，所以需要关闭
+  98          *******************************************************************************************/
+  99          void Disable_M_ADC(void)
+ 100          {
+ 101   1      INT32U ctmp;
+ 102   1      
+ 103   1              CtrlADC6 &=~BIT3;   //BIT3 =0 关闭M通道ADC   ，此处为多处复用控制器，采用与方式赋值 //
+ 104   1              CtrlADC5 = 0x80;      //测量内部低  //
+ 105   1              CtrlM |= BIT0;
+ 106   1              ctmp = ReadMeterParaACK(PMCtrl1);
+ 107   1              ctmp &=~ BIT3;      //BIT3 =0关闭M通道数字信号输入 //
+ 108   1              SetMeterCfgACK( ctmp,PMCtrl1);     
+ 109   1      }
+ 110          
+ 111          
+ 112          /*******************************************************************************************
+ 113          ** 函数名称: Samlpe_BatAdc
+C51 COMPILER V9.01   DRV_ADC                                                               01/31/2019 11:34:19 PAGE 3   
+
+ 114          ** 函数描述: 获取VBAT管脚的M通道的测量直流电压
+ 115          ** 输入参数: 无
+ 116          ** 输出参数: uint16 ，电池电压值，量纲:0.01V
+ 117          ** 说明    : 
+ 118          *******************************************************************************************/
+ 119          uint16  Samlpe_BatAdc(void)
+ 120          {
+ 121   1       uint16 nVBAT;
+ 122   1       uint32 u32_PMdataltemp;
+ 123   1      
+ 124   1          Enable_M_ADC(M_ADC_CH2_VBAT);
+ 125   1          Lib_Delay_ms(10);
+ 126   1      
+ 127   1          u32_PMdataltemp =ReadMeterParaACK(DATAOM);
+ 128   1          nVBAT =(uint16)(u32_PMdataltemp>>16);
+ 129   1          if (nVBAT& 0x8000) 
+ 130   1          {
+ 131   2              nVBAT= 0;
+ 132   2          }
+ 133   1          else
+ 134   1          {
+ 135   2              nVBAT = nVBAT/71-5;             //电容方式 分压//
+ 136   2          }
+ 137   1      
+ 138   1          NOP();
+ 139   1          Disable_M_ADC();
+ 140   1          return nVBAT;
+ 141   1      }
+ 142          
+ 143          
+ 144          /*******************************************************************************************
+ 145          ** 函数名称: Samlpe_temperatureAdc
+ 146          ** 函数描述: 获取当前电表温度
+ 147          ** 输入参数: 无
+ 148          ** 输出参数: uint16 ，电池电压值，量纲:0.01V
+ 149          ** 说明    : 
+ 150          *******************************************************************************************/
+ 151          int16  Samlpe_temperatureAdc(void)
+ 152          {
+ 153   1       float temperature;
+ 154   1         
+ 155   1          Enable_M_ADC(M_ADC_CH1_TEMPERATURE);
+ 156   1          Lib_Delay_ms(10);
+ 157   1          temperature = Cal_temperature_data();
+ 158   1          Disable_M_ADC();
+ 159   1          return((int16)(temperature*10));
+ 160   1      }
+ 161          
+ 162          
+ 163          /*******************************************************************************************
+ 164          ** 函数名称: Samlpe_temperatureAdc
+ 165          ** 函数描述: 获取当前电表温度
+ 166          ** 输入参数: 无
+ 167          ** 输出参数: uint16 ，电池电压值，量纲:0.01V
+ 168          ** 说明    : 
+ 169          *******************************************************************************************/
+ 170          float  Cal_temperature_data(void)
+ 171          {
+ 172   1       uint8 i;  
+ 173   1       uint8 code *p;
+ 174   1      
+ 175   1       S_TEMPPARA s_TempPara;
+C51 COMPILER V9.01   DRV_ADC                                                               01/31/2019 11:34:19 PAGE 4   
+
+ 176   1       uint32  MAdcValue;
+ 177   1       ST_U16_U08 Kpara;
+ 178   1       ST_U32_U08 temp1;
+ 179   1      
+ 180   1       float temperature; //当前温度//
+ 181   1       uint8 TempParaSum;
+ 182   1       uint32  temp;
+ 183   1      
+ 184   1      
+ 185   1          //从FLASH 的 0X420位置获取芯片内部的A/B/C/D/E 5个温度曲线系数，小端模式  //
+ 186   1          p=(uint8 code*)0x420;
+ 187   1          for(i=0;i<3;i++)
+ 188   1          {
+ 189   2              Lib_FCpyTMem((uint8*)&s_TempPara.ul_TempParaA,p+i*24,sizeof(S_TEMPPARA));       // 注意小端//
+ 190   2              TempParaSum=Lib_get_csck_int8u_num((uint8*)&s_TempPara.ul_TempParaA,sizeof(S_TEMPPARA)-2,0x33);
+ 191   2              if(TempParaSum==s_TempPara.uc_Add33)
+ 192   2              {
+ 193   3                  break;
+ 194   3              }
+ 195   2          }
+ 196   1          
+ 197   1          temp1.u32 = s_TempPara.ul_TempParaA;
+ 198   1          Lib_Rev_Copy_Arry(&temp1.B08[0], 4);
+ 199   1          s_TempPara.ul_TempParaA = temp1.u32;
+ 200   1      
+ 201   1          temp1.u32 = s_TempPara.ul_TempParaB;
+ 202   1          Lib_Rev_Copy_Arry(&temp1.B08[0], 4);
+ 203   1          s_TempPara.ul_TempParaB = temp1.u32;
+ 204   1      
+ 205   1          temp1.u32 = s_TempPara.ul_TempParaC;
+ 206   1          Lib_Rev_Copy_Arry(&temp1.B08[0], 4);
+ 207   1          s_TempPara.ul_TempParaC = temp1.u32;
+ 208   1      
+ 209   1          temp1.u32 = s_TempPara.ul_TempParaD;
+ 210   1          Lib_Rev_Copy_Arry(&temp1.B08[0], 4);
+ 211   1          s_TempPara.ul_TempParaD = temp1.u32;
+ 212   1      
+ 213   1          temp1.u32 = s_TempPara.ul_TempParaE;
+ 214   1          Lib_Rev_Copy_Arry(&temp1.B08[0], 4);
+ 215   1          s_TempPara.ul_TempParaE = temp1.u32;
+ 216   1      
+ 217   1          //获取芯片的温度数据原始值//
+ 218   1          MAdcValue=ReadMeterParaACK(DATAOM);//读M通道原始值//
+ 219   1          temp=MAdcValue>>16;
+ 220   1          Lib_FCpyTMem(&Kpara.B08[0], (uint8 code*)&InitParaRTC[(CtrlBGP&0x3e)], 0x02);   //????  //
+ 221   1          temp=(temp*Kpara.u16)/1000;
+ 222   1          
+ 223   1          if(TempParaSum!=s_TempPara.uc_Add33)
+ 224   1          {        
+ 225   2              s_TempPara.ul_TempParaA = 18018;        // 精工//
+ 226   2              s_TempPara.ul_TempParaB = 1;
+ 227   2              s_TempPara.ul_TempParaC = 224019254;
+ 228   2              s_TempPara.ul_TempParaD = 7092;
+ 229   2              s_TempPara.ul_TempParaE = 10;
+ 230   2          }
+ 231   1      
+ 232   1          //测量温度计算 //
+ 233   1          temperature=(s_TempPara.ul_TempParaB*sqrt(s_TempPara.ul_TempParaC+s_TempPara.ul_TempParaD*temp)-s_Temp
+             -Para.ul_TempParaA)/s_TempPara.ul_TempParaE;
+ 234   1      
+ 235   1          //从FLASH 的 0X480位置获取芯片内部的温度偏差值(芯片温度和环境温度的偏差)，10倍的系数，大端模式  //
+ 236   1          p=(uint8 code*)0x480;
+C51 COMPILER V9.01   DRV_ADC                                                               01/31/2019 11:34:19 PAGE 5   
+
+ 237   1          for(i=0;i<3;i++)
+ 238   1          {
+ 239   2              Lib_FCpyTMem((uint8*)&temp1.B08[0],p+(i*4),4);  
+ 240   2              temp1.B08[2]    = Lib_get_csck_int8u_num((uint8*)&temp1.B08[0],2,0x33);
+ 241   2              if(temp1.B08[2] == temp1.B08[3])
+ 242   2              {
+ 243   3                  break;
+ 244   3              }
+ 245   2          }
+ 246   1      
+ 247   1          // 最终的温度=  测量温度+偏差温度 //
+ 248   1          if(temp1.B08[2] != temp1.B08[3])
+ 249   1          {
+ 250   2              temp1.W16[0] = 0;               // 校验出错 默认0//
+ 251   2          }
+ 252   1      
+ 253   1          if(temp1.W16[0]&0x8000)
+ 254   1          {
+ 255   2              temp1.W16[0] = ~temp1.W16[0]+1;
+ 256   2              temperature -= (temp1.W16[0]/10);
+ 257   2          }
+ 258   1          else
+ 259   1          {
+ 260   2              temperature += (temp1.W16[0]/10);
+ 261   2          }
+ 262   1      
+ 263   1          //范围判断并处理  //
+ 264   1          if(temperature>90)
+ 265   1          {   
+ 266   2              temperature=90;
+ 267   2          }else if(temperature<(-43))
+ 268   1          {   
+ 269   2              temperature=-43;
+ 270   2          }
+ 271   1      
+ 272   1          return (temperature);
+ 273   1      
+ 274   1      }
+ 275          
+ 276          
+ 277          /*******************************************************************************************
+ 278          **    END
+ 279          *******************************************************************************************/
+ 280          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1299    ----
+   CONSTANT SIZE    =     64    ----
+   XDATA SIZE       =   ----      45
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

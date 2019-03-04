@@ -1,0 +1,199 @@
+C51 COMPILER V9.01   API_MEASURE                                                           01/31/2019 13:49:36 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE API_MEASURE
+OBJECT MODULE PLACED IN .\Api_Measure.obj
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE ..\C_Source\S3_ApiPlat\Api_Measure.c LARGE WARNINGLEVEL(1) BROWSE INCDIR(..
+                    -\C_Source\S0_System;..\C_Source\S1_HardDrv;..\C_Source\S2_MyLib;..\C_Source\S3_ApiPlat;..\C_Source\S4_ApiUser;..\C_Sourc
+                    -e\S5_ApiProtocol;..\C_Source\S6_MyIncludes;..\C_Source\S1_HardDrv\V9811A_EMU;..\C_Source\S1_HardDrv\V9811A_MCU;..\C_Sour
+                    -ce\S1_HardDrv\E2P_24CXXX) DEBUG OBJECTEXTEND PRINT(.\Api_Measure.lst) OBJECT(.\Api_Measure.obj)
+
+line level    source
+
+   1          /*
+   2          *****************Copyright (c)*************************************
+   3          **      Hangzhou Xili Watthour Meter Manufacture Co., Ltd. 
+   4          **--------------file info--------------------------------------------
+   5          **name                  : Api_Measure.H
+   6          **Author                : maji
+   7          **date                  : 2016-04-21 
+   8          **description   : c code for ≤‚¡ø≥Ã–Ú”¶”√≤„
+   9          **note                  : MCU- G80F92XD £¨MERTER FOR DL06A
+  10          **--------------------Version History -------------------------------------
+  11          ** NO. Date         Ver      By         Description 
+  12          **==============================================================
+  13          ** 1   2016-04-21   v01.00   sosomj     1. frist version                             
+  14          **
+  15          **==============================================================
+  16          */
+  17          
+  18          
+  19          #include <MyIncludes_H.h>
+  20          
+  21          MEASURE_VAR_DATA gs_measure_var_data;
+  22          MEASURE_STATU_JUDGE_VAR gs_measure_status_judge_var;
+  23          
+  24          /*****************************************************************************
+  25          ** Function name    :api_Measure_ram_INIT
+  26          **
+  27          ** Description         :µÁÕ¯≤‚¡ø±‰¡ø≥ı ºªØ
+  28          **
+  29          ** Parameters         :NONE          
+  30          **
+  31          ** Returned value   :NONE
+  32          **
+  33          **----------------------------------------------------------------------------
+  34          ** V01.01  MJ  2016-04-23
+  35          ******************************************************************************/
+  36          void api_Measure_ram_INIT(void)
+  37          {
+  38   1       INT16U temp_16u;
+  39   1          temp_16u = gs_measure_var_data.w_temp.u16;   //Ã·»°µÁ±ÌŒ¬∂»  //
+  40   1          Lib_Set_String((uint8 *)&gs_measure_var_data,0,sizeof(MEASURE_VAR_DATA));
+  41   1          Lib_Set_String((uint8 *)&gs_measure_status_judge_var,0,sizeof(MEASURE_STATU_JUDGE_VAR));
+  42   1      
+  43   1           gs_measure_var_data.w_temp.u16 = temp_16u;   //Ã·»°µÁ±ÌŒ¬∂»  //
+  44   1      }
+  45          
+  46          /*****************************************************************************
+  47          ** Function name    :api_measure_deal_pre_second
+  48          **
+  49          ** Description         :√ø√Îµ˜”√µƒ≤‚¡ø∫Ø ˝
+  50          **
+  51          ** Parameters         :NONE          
+  52          **
+C51 COMPILER V9.01   API_MEASURE                                                           01/31/2019 13:49:36 PAGE 2   
+
+  53          ** Returned value   :NONE
+  54          **
+  55          **----------------------------------------------------------------------------
+  56          ** V01.01  MJ  2016-04-23
+  57          ******************************************************************************/
+  58          void api_measure_deal_pre_second(void)
+  59          {
+  60   1       uint32 u32_UI, u32_P, u32_PF;
+  61   1       
+  62   1          if(CheckPOWERUP() !=TRUE)   return;        
+  63   1      
+  64   1          if(gs_emu_run_var.delay_emu>0)
+  65   1          {
+  66   2              gs_emu_run_var.delay_emu--;
+  67   2              api_Measure_ram_INIT();
+  68   2              return;
+  69   2          }
+  70   1      
+  71   1          //ªÒ»°º∆¡øÕ®µ¿°¢ƒ‹¡ø ˝æ›∏≥÷µ°¢ªÒ»°µÁÕ¯◊¥Ã¨π¶ƒ‹  //
+  72   1          gs_measure_status_judge_var.emu_ch = lnk_CAL_EMU_constSum_per_second(&gs_measure_status_judge_var.u8_s
+             -tatus,gs_sys_globaL_var.work_mode);
+  73   1      
+  74   1          //µÁ—πªÒ»°  //
+  75   1          gs_measure_var_data.gs_really[0].dw_u_val.u32= Lnk_get_EMU_voltage(PHASE_TT);
+  76   1          
+  77   1          //µÁ¡˜ªÒ»°  //
+  78   1          gs_measure_var_data.gs_really[0].dw_i_val.u32 = Lnk_get_EMU_current(WIRE_L);
+  79   1         // gs_measure_var_data.dw_i_n_val.u32  = Lnk_get_EMU_current(WIRE_N);
+  80   1      
+  81   1          //”–π¶π¶¬ ªÒ»°  //
+  82   1          gs_measure_var_data.gs_really[0].dw_p_val.u32 = Lnk_get_EMU_activePower(WIRE_L);
+  83   1         // gs_measure_var_data.dw_p_n_val.u32  = Lnk_get_EMU_activePower(WIRE_N);   
+  84   1      
+  85   1          //µÁÕ¯∆µ¬ ≤‚¡ø//
+  86   1          gs_measure_var_data.gs_really[0].w_freq_val.u16 = (uint16)Lnk_get_EMU_freq(PHASE_TT);
+  87   1          // ≤π≥‰µÁ≥ÿµÁ—π≤‚¡ø∫Ø ˝ //
+  88   1          
+  89   1          if(gs_measure_var_data.gs_really[0].dw_p_val.u32<20)
+  90   1          {
+  91   2              gs_measure_var_data.gs_really[0].dw_i_val.u32 = 0;
+  92   2              gs_measure_var_data.gs_really[0].dw_p_val.u32 = 0;
+  93   2              gs_measure_var_data.gs_really[0].dw_pf_val.u16= 1000;
+  94   2          }
+  95   1          else
+  96   1          {
+  97   2              //º∆À„π¶¬ “Ú ˝£¨¡ø∏Ÿ0.001 ∏Ò ΩX.XXX //
+  98   2              u32_P = 1000*gs_measure_var_data.gs_really[0].dw_p_val.u32;
+  99   2              u32_UI = ((gs_measure_var_data.gs_really[0].dw_u_val.u32 * gs_measure_var_data.gs_really[0].dw_i_v
+             -al.u32 )/1000);
+ 100   2              u32_PF = u32_P/u32_UI;
+ 101   2              if(u32_PF>995)  u32_PF = 1000;
+ 102   2              gs_measure_var_data.gs_really[0].dw_pf_val.u16 = (uint16)(u32_PF);
+ 103   2          }
+ 104   1          
+ 105   1      }
+ 106          
+ 107          /*****************************************************************************
+ 108          ** Function name    :api_measure_VBAT_pre_min
+ 109          **
+ 110          ** Description         :√ø∑÷÷”≤‚ ‘“ª¥ŒµÁ≥ÿµÁ—π
+ 111          **
+ 112          ** Parameters         :NONE          
+C51 COMPILER V9.01   API_MEASURE                                                           01/31/2019 13:49:36 PAGE 3   
+
+ 113          **
+ 114          ** Returned value   :NONE
+ 115          **
+ 116          **----------------------------------------------------------------------------
+ 117          ** V01.01  MJ  2016-04-23
+ 118          ******************************************************************************/
+ 119          void api_measure_VBAT_pre_min(void)
+ 120          {
+ 121   1          gs_measure_var_data.w_bat_v.u16= (Samlpe_BatAdc());
+ 122   1        
+ 123   1      //      if( gs_measure_var_data.w_bat_v.u16<= 280 )
+ 124   1                      if( gs_measure_var_data.w_bat_v.u16<= 250 ) 
+ 125   1              {
+ 126   2                gs_measure_var_data.w_bat_v.u16= (Samlpe_BatAdc());
+ 127   2               // if( gs_measure_var_data.w_bat_v.u16<= 280 )
+ 128   2                         if( gs_measure_var_data.w_bat_v.u16<= 250 ) 
+ 129   2                              gs_measure_status_judge_var.u8_status |=VBAT_LOW;
+ 130   2              }
+ 131   1            else
+ 132   1              {
+ 133   2               gs_measure_status_judge_var.u8_status &= (~VBAT_LOW);
+ 134   2             }        
+ 135   1      }
+ 136          
+ 137          /*****************************************************************************
+ 138          ** Function name    :api_measure_VBAT_pre_min
+ 139          **
+ 140          ** Description         :√ø∑÷÷”≤‚ ‘“ª¥ŒµÁ≥ÿµÁ—π
+ 141          **
+ 142          ** Parameters         :NONE          
+ 143          **
+ 144          ** Returned value   :NONE
+ 145          **
+ 146          **----------------------------------------------------------------------------
+ 147          ** V01.01  MJ  2016-04-23
+ 148          ******************************************************************************/
+ 149          void api_measure_temperature_pre_min(void)
+ 150          {
+ 151   1      #ifdef _RTC_CAL
+ 152   1           gs_measure_var_data.w_temp.u16 =  (INT16U)(10*Handl_RTC_Adj_per_minu());         // ¥¯Œ¬≤ππ¶ƒ‹µƒ±Ì≤‚Œ
+             -¬µƒÕ¨ ±ÕÍ≥…Œ¬≤π //
+ 153   1      #endif
+ 154   1      
+ 155   1      #ifndef _RTC_CAL
+                  gs_measure_var_data.w_temp.u16 = Samlpe_temperatureAdc();
+              #endif
+ 158   1      }
+ 159          
+ 160          
+ 161          /***************************************************************
+ 162          *    END
+ 163          ****************************************************************/
+ 164          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    455    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     36      10
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.01   API_MEASURE                                                           01/31/2019 13:49:36 PAGE 4   
+
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
